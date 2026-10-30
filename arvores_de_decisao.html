@@ -1,0 +1,1528 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Árvores de Decisão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --preto: #000000; --branco: #FFFFFF; --laranja: #F28C28; --azul: #0B2545;
+    --bg: var(--branco); --fg: var(--preto); --linha: var(--preto); --card: var(--branco);
+    --borda: rgba(11, 37, 69, .14);
+    --sombra: 0 1px 2px rgba(11, 37, 69, .05), 0 12px 32px -14px rgba(11, 37, 69, .18);
+    --tint-azul: rgba(11, 37, 69, .045); --tint-laranja: rgba(242, 140, 40, .12);
+    --nav-bg: rgba(255, 255, 255, .9); --no-borda: var(--azul); --folha-borda: transparent;
+    --suave: rgba(11, 37, 69, .72);
+    --lado: 276px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: var(--preto); --fg: var(--branco); --linha: var(--branco); --card: var(--preto);
+      --borda: rgba(255, 255, 255, .2); --sombra: none;
+      --tint-azul: rgba(255, 255, 255, .06); --tint-laranja: rgba(242, 140, 40, .16);
+      --nav-bg: rgba(0, 0, 0, .9); --no-borda: var(--branco); --folha-borda: var(--branco);
+      --suave: rgba(255, 255, 255, .7);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: var(--preto); --fg: var(--branco); --linha: var(--branco); --card: var(--preto);
+    --borda: rgba(255, 255, 255, .2); --sombra: none;
+    --tint-azul: rgba(255, 255, 255, .06); --tint-laranja: rgba(242, 140, 40, .16);
+    --nav-bg: rgba(0, 0, 0, .9); --no-borda: var(--branco); --folha-borda: var(--branco);
+    --suave: rgba(255, 255, 255, .7);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 17px/1.65 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    font-feature-settings: "cv11", "ss01";
+  }
+  b, strong { font-weight: 700; }
+  code { font: 500 .88em/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: var(--tint-azul);
+         border: 1px solid var(--borda); border-radius: 6px; padding: 2px 6px; }
+  ::selection { background: var(--laranja); color: var(--preto); }
+  :focus-visible { outline: 3px solid var(--laranja); outline-offset: 2px; }
+
+  /* ---------- Barra de progresso ---------- */
+  .progresso { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 40; pointer-events: none; }
+  .progresso i { display: block; height: 100%; background: var(--laranja); transform-origin: 0 50%; transform: scaleX(0); }
+
+  /* ---------- Capa ---------- */
+  .hero { position: relative; overflow: hidden; background: var(--azul); color: var(--branco); border-bottom: 6px solid var(--laranja); }
+  .hero::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+                  background-image: radial-gradient(rgba(255, 255, 255, .1) 1.2px, transparent 1.6px); background-size: 28px 28px;
+                  -webkit-mask-image: linear-gradient(90deg, transparent 10%, #000 75%); mask-image: linear-gradient(90deg, transparent 10%, #000 75%); }
+  .hero .in { position: relative; max-width: 1120px; margin: 0 auto; padding: 96px 32px 88px; min-height: min(88vh, 780px);
+              display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 56px; align-items: center; }
+  .hero small { color: var(--laranja); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: .8rem; }
+  .hero h1 { font-size: clamp(2.6rem, 6.4vw, 4.75rem); line-height: 1.02; letter-spacing: -.035em; margin: 18px 0 22px; font-weight: 800; }
+  .hero p { margin: 0; font-size: clamp(1.05rem, 1.6vw, 1.22rem); max-width: 620px; color: rgba(255, 255, 255, .88); }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 30px; }
+  .chips span { border: 1px solid rgba(255, 255, 255, .55); border-radius: 999px; padding: 6px 14px; font-size: .84rem; font-weight: 600; }
+  .chips span.on { background: var(--laranja); border-color: var(--laranja); color: var(--preto); }
+  .hero-acoes { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; margin-top: 44px; }
+  .cta { display: inline-flex; align-items: center; gap: 10px; background: var(--laranja); color: var(--preto); font-weight: 700;
+         text-decoration: none; padding: 14px 24px; border-radius: 999px; transition: transform .15s, box-shadow .15s; }
+  .cta:hover { transform: translateY(-1px); box-shadow: 0 10px 26px -8px rgba(242, 140, 40, .75); }
+  .cta svg { width: 18px; height: 18px; display: inline-block; }
+  .dica-teclas { font-size: .86rem; color: rgba(255, 255, 255, .75); }
+  kbd { font: 600 .76rem/1 Inter, system-ui, sans-serif; display: inline-grid; place-items: center; min-width: 24px; height: 24px;
+        padding: 0 6px; border-radius: 6px; border: 1px solid currentColor; margin-right: 4px; }
+  svg.hero-arv { max-width: 420px; justify-self: end; overflow: visible; }
+  @media (max-width: 899px) {
+    .hero .in { grid-template-columns: 1fr; min-height: 0; padding: 64px 16px 56px; }
+    svg.hero-arv { display: none; }
+  }
+
+  /* ---------- Navegação ---------- */
+  nav { position: sticky; top: 0; z-index: 20; background: var(--nav-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--borda); }
+  nav .marca, nav .dica { display: none; }
+  nav .in { max-width: 1120px; margin: 0 auto; padding: 0 16px; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+  nav .in::-webkit-scrollbar { display: none; }
+  nav a { color: var(--fg); text-decoration: none; font-size: .88rem; font-weight: 600; padding: 15px 11px; white-space: nowrap;
+          border-bottom: 3px solid transparent; opacity: .68; counter-increment: item; transition: opacity .15s, background .15s; }
+  nav a::before { content: counter(item, decimal-leading-zero); font-size: .72rem; font-variant-numeric: tabular-nums; margin-right: 7px; opacity: .6; }
+  nav a:hover { opacity: 1; }
+  nav a.on { opacity: 1; border-bottom-color: var(--laranja); }
+  nav a.on::before { color: var(--laranja); opacity: 1; }
+  nav .rot { flex: none; align-self: center; font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+             color: var(--laranja); padding: 0 4px 0 14px; counter-reset: item; }
+  nav .rot:first-child { padding-left: 0; }
+
+  @media (min-width: 1180px) {
+    html { scroll-padding-top: 28px; }
+    body { padding-left: var(--lado); }
+    nav { position: fixed; top: 0; left: 0; bottom: 0; width: var(--lado); overflow-y: auto; border-bottom: 0;
+          border-right: 1px solid var(--borda); background: var(--bg); backdrop-filter: none; -webkit-backdrop-filter: none;
+          display: flex; flex-direction: column; padding: 32px 0 24px; }
+    nav .marca { display: block; padding: 0 28px 26px; margin-bottom: 6px; border-bottom: 1px solid var(--borda); }
+    nav .marca small { display: block; color: var(--laranja); font-size: .7rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    nav .marca b { display: block; font-size: 1.2rem; line-height: 1.2; letter-spacing: -.02em; margin-top: 6px; }
+    nav .marca span { display: block; font-size: .82rem; color: var(--suave); margin-top: 4px; }
+    nav .in { flex-direction: column; overflow: visible; padding: 0 14px; max-width: none; margin: 0; gap: 1px; }
+    nav a { padding: 8px 14px; border-bottom: 0; border-radius: 10px; display: flex; align-items: center; }
+    nav a:hover { background: var(--tint-azul); }
+    nav a.on { background: var(--tint-laranja); }
+    nav .rot { align-self: stretch; padding: 22px 14px 8px; }
+    nav .rot:first-child { padding-left: 14px; }
+    nav .dica { display: block; margin-top: auto; padding: 24px 28px 0; font-size: .78rem; color: var(--suave); }
+  }
+
+  /* ---------- Layout ---------- */
+  main { max-width: 1120px; margin: 0 auto; padding: 8px 32px 96px; }
+  @media (max-width: 640px) { main { padding: 8px 16px 88px; } }
+  section { padding-top: 104px; }
+  .parte + .parte-cla > section:first-child, .parte + .parte-reg > section:first-child { padding-top: 72px; }
+  .parte-cla > section::before, .parte-reg > section::before {
+    display: block; font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--suave);
+    padding-bottom: 14px; margin-bottom: 26px; border-bottom: 1px solid var(--borda);
+    background: linear-gradient(var(--laranja), var(--laranja)) left bottom / 56px 2px no-repeat;
+  }
+  .parte-cla > section::before { content: "Exemplo 1 · Classificação"; }
+  .parte-reg > section::before { content: "Exemplo 2 · Regressão"; }
+  h2 { display: flex; align-items: center; gap: 16px; font-size: clamp(1.65rem, 3.2vw, 2.35rem); line-height: 1.15;
+       letter-spacing: -.025em; font-weight: 800; margin: 0 0 14px; }
+  h2 .n { flex: none; width: 46px; height: 46px; border-radius: 50%; background: var(--laranja); color: var(--preto);
+          display: grid; place-items: center; font-size: 1.1rem; letter-spacing: 0; }
+  .lead { margin: 0 0 28px; font-size: 1.1rem; line-height: 1.7; color: var(--fg); opacity: .84; max-width: 780px; }
+  h3 { font-size: 1.04rem; letter-spacing: -.01em; margin: 0 0 12px; font-weight: 700; }
+  .card { background: var(--card); border: 1px solid var(--borda); border-radius: 18px; padding: 24px; box-shadow: var(--sombra); min-width: 0; }
+  @media (max-width: 640px) { .card { padding: 18px; border-radius: 16px; } }
+  .stack > * + * { margin-top: 18px; }
+  .row { display: flex; gap: 18px; flex-wrap: wrap; }
+  .row > * { flex: 1 1 320px; min-width: 0; }
+  .regras { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin: 0 0 22px; }
+  .regra { border-radius: 14px; padding: 18px; border: 1px solid var(--borda); background: var(--tint-azul); min-width: 0; }
+  .regra > b:first-child { display: block; font-size: 1.02rem; margin-bottom: 4px; }
+  .regra.destaque { background: var(--tint-laranja); border-color: var(--laranja); }
+  .kpi { font-size: 1.75rem; font-weight: 800; line-height: 1.2; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin: 4px 0 2px; }
+  .kpi small { font-size: .9rem; font-weight: 600; opacity: .75; letter-spacing: 0; }
+
+  /* ---------- Tags, pontos, tabelas ---------- */
+  .tag { display: inline-block; min-width: 46px; text-align: center; padding: 2px 12px; border-radius: 999px; font-weight: 700; font-size: .84rem; }
+  .p { background: var(--laranja); color: var(--preto); }
+  .h { background: var(--azul); color: var(--branco); box-shadow: inset 0 0 0 1px var(--linha); }
+  .wrap { overflow-x: auto; border-radius: 14px; border: 1px solid var(--borda); background: var(--card); }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { padding: 12px 16px; text-align: center; border-bottom: 1px solid var(--borda); }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:not(.best):hover td { background: var(--tint-azul); }
+  th { background: var(--azul); color: var(--branco); font-weight: 600; font-size: .86rem; letter-spacing: .01em; }
+  tr.best td { font-weight: 700; background: var(--tint-laranja); }
+  tr.best td:first-child { box-shadow: inset 5px 0 0 var(--laranja); }
+  #r-erros td, #r-erros th { white-space: nowrap; padding: 10px; }
+  td small { display: block; font-weight: 500; opacity: .8; white-space: nowrap; }
+
+  /* ---------- Botões ---------- */
+  button {
+    font: inherit; font-weight: 600; font-size: .93rem; cursor: pointer; border-radius: 999px; padding: 9px 18px; min-height: 40px;
+    border: 1.5px solid var(--borda); background: var(--card); color: var(--fg); transition: background .15s, border-color .15s, color .15s;
+  }
+  button:hover { border-color: var(--laranja); }
+  button.on, button.prim { background: var(--laranja); color: var(--preto); border-color: var(--laranja); }
+  button:disabled { opacity: .35; cursor: default; }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+  input[type="range"] { accent-color: var(--laranja); width: 100%; }
+
+  /* seletor de passos em formato segmentado */
+  #passos, #r-passos { display: inline-flex; gap: 4px; padding: 5px; margin: 4px 0 18px; border-radius: 999px;
+                       background: var(--tint-azul); border: 1px solid var(--borda); }
+  #passos button, #r-passos button { border-color: transparent; background: transparent; }
+  #passos button:hover:not(.on), #r-passos button:hover:not(.on) { background: var(--card); border-color: var(--borda); }
+  #passos button.on, #r-passos button.on { background: var(--laranja); border-color: var(--laranja); box-shadow: 0 2px 8px -2px rgba(242, 140, 40, .6); }
+  @media (max-width: 720px) { #passos, #r-passos { border-radius: 18px; } }
+
+  /* ---------- SVG ---------- */
+  svg { width: 100%; height: auto; display: block; }
+  svg.arv { max-width: 540px; margin: 0 auto; }
+  svg text { fill: var(--fg); font-family: inherit; }
+  .edge { stroke: var(--linha); stroke-width: 1.75; stroke-linejoin: round; opacity: .55; }
+  .edge.ativo { stroke: var(--laranja); stroke-width: 4; opacity: 1; }
+  .node { filter: drop-shadow(0 2px 4px rgba(11, 37, 69, .18)); }
+  .node rect { stroke: var(--no-borda); stroke-width: 2; }
+  .node.folha rect { stroke: var(--folha-borda); stroke-width: 1.5; }
+  .node.prov rect { fill: var(--card); stroke: var(--linha); stroke-width: 1.5; stroke-dasharray: 6 5; }
+  .node.ativo rect { stroke: var(--laranja); stroke-width: 4; }
+  svg .lbl { font-size: 13px; font-weight: 700; paint-order: stroke; stroke: var(--card); stroke-width: 5px; }
+  svg .lbl.ativo { fill: var(--laranja); }
+  .node.proximo rect { stroke: var(--laranja); stroke-width: 4; stroke-dasharray: 8 6; animation: pulso 1.2s ease-in-out infinite; }
+  @keyframes pulso { 50% { stroke-width: 7; } }
+  .eixo { font-size: 12px; }
+  .grade { stroke: var(--borda); }
+  .halo { paint-order: stroke; stroke: var(--card); stroke-width: 5px; font-weight: 800; font-size: 14px; }
+  .faixa { max-width: 360px; }
+  #legenda-passo, #r-legenda-passo { font-size: 1.05rem; min-height: 3.2em; margin: 0 0 18px; max-width: 820px; }
+  .legenda { display: flex; gap: 18px; flex-wrap: wrap; font-size: .88rem; margin-top: 10px; color: var(--suave); }
+  .legenda i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px;
+               border: 1px solid var(--linha); }
+
+  /* ---------- Fórmulas e passo a passo ---------- */
+  .formula { font-family: "Cambria Math", "STIX Two Math", Georgia, serif; font-size: 1.2rem; text-align: center; line-height: 1.8;
+             background: var(--tint-azul); border: 1px solid var(--borda); border-radius: 12px; padding: 14px 16px; margin: 14px 0; overflow-x: auto; }
+  .nota { border: 1px solid rgba(242, 140, 40, .45); border-left: 4px solid var(--laranja); background: var(--tint-laranja);
+          border-radius: 12px; padding: 14px 18px; margin: 18px 0 0; }
+  .passo-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+                padding-bottom: 14px; border-bottom: 1px solid var(--borda); }
+  .trilha { display: flex; gap: 6px; flex-wrap: wrap; }
+  .trilha i { width: 26px; height: 8px; border-radius: 4px; background: var(--borda); cursor: pointer; transition: background .2s; }
+  .trilha i:hover { background: var(--suave); }
+  .trilha i.feito { background: var(--azul); box-shadow: inset 0 0 0 1px var(--linha); }
+  .trilha i.atual { background: var(--laranja); }
+  .fase { font-size: .76rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--laranja); }
+  #passo-corpo, #r-passo-corpo { min-height: 300px; }
+  #passo-corpo h4, #r-passo-corpo h4 { font-size: 1.4rem; letter-spacing: -.02em; margin: 6px 0 10px; }
+  .res { color: var(--laranja); font-weight: 800; }
+
+  /* ---------- Barras de redução ---------- */
+  .barras { display: grid; grid-template-columns: auto 1fr auto; gap: 8px 12px; align-items: center; font-size: .92rem; }
+  .barra { height: 16px; border-radius: 8px; background: var(--azul); box-shadow: inset 0 0 0 1px var(--linha); }
+  .barra.best { background: var(--laranja); box-shadow: none; }
+
+  /* ---------- Estimador ---------- */
+  .classif > :first-child { flex: 1 1 300px; }
+  .classif > :last-child { flex: 2 1 460px; }
+  .pergunta { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; padding: 14px 0;
+              border-bottom: 1px solid var(--borda); flex-wrap: wrap; transition: opacity .2s; }
+  .pergunta .btns { margin: 0; flex-wrap: nowrap; }
+  .pergunta.inativa { opacity: .35; }
+  .pergunta.atual > span { font-weight: 700; }
+  .pergunta .num { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; margin-right: 10px;
+                   font-size: .8rem; border: 1.5px solid var(--borda); }
+  .pergunta.atual .num { background: var(--laranja); border-color: var(--laranja); color: var(--preto); }
+  .temp { display: flex; align-items: center; gap: 12px; flex: 1 1 100%; }
+  .temp output { font-weight: 800; min-width: 72px; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+  #arvore-final, #r-arvore-final { min-height: 120px; }
+  #resultado, #r-resultado { font-size: 1.4rem; font-weight: 800; letter-spacing: -.01em; margin-top: 18px; min-height: 2em; }
+  #r-resultado small { display: block; font-weight: 500; font-size: .95rem; opacity: .8; letter-spacing: 0; }
+
+  .parte-reg svg.arv { max-width: 600px; }
+  #resultado small { font-weight: 500; font-size: .95rem; opacity: .8; letter-spacing: 0; }
+  .dot { display: inline-block; width: 22px; height: 22px; border-radius: 50%; margin: 0 3px; vertical-align: middle; border: 1.5px solid var(--linha); }
+  .dot.S { background: var(--laranja); } .dot.N { background: var(--azul); }
+  .grupo { display: inline-flex; align-items: center; gap: 4px; padding: 8px 12px; border-radius: 12px; border: 1px dashed var(--borda); margin: 4px 8px 4px 0; }
+  .grupo b { margin-right: 6px; font-size: .9rem; }
+  .ramo { margin-bottom: 4px; white-space: nowrap; }
+  .ramo .dot { width: 16px; height: 16px; margin: 0 2px; }
+
+  /* ---------- Divisória das partes (capítulos) ---------- */
+  .parte { position: relative; overflow: hidden; isolation: isolate; margin: 128px 0 0; padding: 80px 48px 48px; min-height: 320px;
+           display: flex; flex-direction: column; justify-content: flex-end; border-radius: 24px;
+           background: var(--azul); color: var(--branco); box-shadow: inset 0 0 0 1px var(--folha-borda); }
+  .parte:first-child { margin-top: 56px; }
+  .parte::before { content: attr(data-n); position: absolute; right: 28px; bottom: -40px; z-index: -1; font-size: clamp(150px, 22vw, 270px);
+                   font-weight: 800; line-height: 1; letter-spacing: -.06em; color: transparent; -webkit-text-stroke: 2px rgba(242, 140, 40, .38); }
+  .parte::after { content: ""; position: absolute; left: 48px; top: 0; width: 72px; height: 6px; background: var(--laranja); border-radius: 0 0 4px 4px; }
+  .parte small { color: var(--laranja); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: .8rem; }
+  .parte h2 { display: block; margin: 10px 0 12px; font-size: clamp(1.8rem, 4.4vw, 2.9rem); letter-spacing: -.03em; line-height: 1.1; max-width: 700px; }
+  .parte p { margin: 0; font-size: 1.1rem; color: rgba(255, 255, 255, .86); max-width: 640px; }
+  @media (max-width: 640px) { .parte { padding: 64px 24px 32px; min-height: 250px; margin-top: 96px; } .parte::after { left: 24px; } }
+
+  /* ---------- Pontos positivos e negativos ---------- */
+  .pc { border-top: 6px solid var(--laranja); }
+  .pc.ruim { border-top-color: var(--no-borda); }
+  .pc ul { list-style: none; padding: 0; margin: 0; }
+  .pc li { position: relative; padding: 14px 0 14px 42px; border-top: 1px solid var(--borda); }
+  .pc li:first-child { border-top: 0; }
+  .pc li::before { content: "+"; position: absolute; left: 0; top: 15px; width: 26px; height: 26px; border-radius: 50%;
+                   display: grid; place-items: center; font-weight: 800; background: var(--laranja); color: var(--preto); }
+  .pc.ruim li::before { content: "−"; background: var(--azul); color: var(--branco); box-shadow: inset 0 0 0 1.5px var(--folha-borda); }
+
+  /* ---------- Controle flutuante de seções ---------- */
+  .controle { position: fixed; right: 20px; bottom: 20px; z-index: 30; display: flex; align-items: center; gap: 2px; padding: 5px;
+              background: var(--azul); color: var(--branco); border-radius: 999px; font-size: .82rem;
+              box-shadow: 0 14px 34px -12px rgba(11, 37, 69, .6), inset 0 0 0 1px var(--folha-borda); }
+  .controle button { width: 44px; height: 44px; min-height: 0; padding: 0; display: grid; place-items: center; border: 0;
+                     background: transparent; color: inherit; border-radius: 50%; }
+  .controle button:hover:not(:disabled) { background: rgba(255, 255, 255, .14); }
+  .controle button svg { width: 20px; height: 20px; }
+  #sec-rot { padding: 0 6px; white-space: nowrap; max-width: 300px; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  #sec-rot b { color: var(--laranja); }
+  @media (max-width: 560px) { .controle { right: 12px; bottom: 12px; } #sec-rot .nome { display: none; } }
+
+  /* ---------- Rodapé ---------- */
+  .rodape { border-top: 1px solid var(--borda); }
+  .rodape .in { max-width: 1120px; margin: 0 auto; padding: 32px 32px 120px; display: flex; justify-content: space-between;
+                gap: 16px; flex-wrap: wrap; font-size: .9rem; color: var(--suave); }
+  .rodape a { color: var(--fg); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--laranja); }
+
+  /* ---------- Entrada suave das seções ---------- */
+  .anima main section, .anima .parte { opacity: 0; transform: translateY(28px);
+                                       transition: opacity .7s ease, transform .7s cubic-bezier(.2, .7, .2, 1); }
+  .anima main section.visivel, .anima .parte.visivel { opacity: 1; transform: none; }
+
+  @media print {
+    nav, .controle, .progresso, svg.hero-arv { display: none !important; }
+    body { padding-left: 0 !important; }
+    .anima main section, .anima .parte { opacity: 1 !important; transform: none !important; }
+    .card, .parte { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progresso" aria-hidden="true"><i></i></div>
+
+<header class="hero" id="topo">
+  <div class="in">
+    <div class="hero-txt">
+      <small>Machine Learning · Árvores de Decisão</small>
+      <h1>Árvores de Decisão</h1>
+      <p>Dois exemplos com Python + scikit-learn: <b>classificar</b> (a pessoa vai presencial?) e <b>estimar um valor</b>
+        (quantos litros de cerveja São Paulo consome em um dia).</p>
+      <div class="chips"><span class="on">Python + scikit-learn</span><span>Exemplo 1 · Classificação · Entropia</span><span>Exemplo 2 · Regressão · MSE</span></div>
+      <div class="hero-acoes">
+        <a class="cta" href="#intro">Começar
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+        <span class="dica-teclas"><kbd>←</kbd><kbd>→</kbd> navegam entre as seções</span>
+      </div>
+    </div>
+    <svg class="hero-arv" viewBox="0 0 400 300" aria-hidden="true">
+      <g fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round" opacity=".45">
+        <path d="M200,60 V92 H100 V124"/><path d="M100,168 V200 H50 V232"/><path d="M100,168 V200 H150 V232"/><path d="M300,168 V200 H250 V232"/>
+      </g>
+      <g fill="none" stroke="#F28C28" stroke-width="4" stroke-linejoin="round"><path d="M200,60 V92 H300 V124"/><path d="M300,168 V200 H350 V232"/></g>
+      <rect x="140" y="16" width="120" height="44" rx="10" fill="rgba(255,255,255,.08)" stroke="#F28C28" stroke-width="3"/>
+      <rect x="166" y="34" width="68" height="8" rx="4" fill="#FFFFFF" opacity=".8"/>
+      <rect x="40" y="124" width="120" height="44" rx="10" fill="rgba(255,255,255,.08)" stroke="#FFFFFF" stroke-opacity=".6" stroke-width="2"/>
+      <rect x="70" y="142" width="60" height="8" rx="4" fill="#FFFFFF" opacity=".6"/>
+      <rect x="240" y="124" width="120" height="44" rx="10" fill="rgba(255,255,255,.08)" stroke="#F28C28" stroke-width="3"/>
+      <rect x="266" y="142" width="68" height="8" rx="4" fill="#FFFFFF" opacity=".8"/>
+      <rect x="8" y="232" width="84" height="40" rx="20" fill="#F28C28"/>
+      <rect x="108" y="232" width="84" height="40" rx="20" fill="#0B2545" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="1.5"/>
+      <rect x="208" y="232" width="84" height="40" rx="20" fill="#0B2545" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="1.5"/>
+      <rect x="308" y="232" width="84" height="40" rx="20" fill="#F28C28" stroke="#FFFFFF" stroke-width="3"/>
+    </svg>
+  </div>
+</header>
+
+<nav aria-label="Seções">
+  <div class="marca"><small>Machine Learning</small><b>Árvores de Decisão</b><span>Python + scikit-learn</span></div>
+  <div class="in">
+  <span class="rot">Classificação</span><a href="#intro">Introdução</a><a href="#cenario">Cenário</a><a href="#intuicao">Intuição</a><a href="#entropia">Entropia e Ganho</a><a href="#feriado">Feriado</a><a href="#classificar">Classificar</a><a href="#pros">Prós e contras</a>
+  <span class="rot">Regressão</span><a href="#r-intro">Introdução</a><a href="#r-dados">Dados</a><a href="#r-intuicao">Intuição</a><a href="#r-mse">MSE e Redução</a><a href="#r-chuva">Chuva</a><a href="#r-estimar">Estimar</a><a href="#r-pros">Prós e contras</a>
+</div>
+  <div class="dica"><kbd>←</kbd><kbd>→</kbd> seção anterior / próxima</div>
+</nav>
+
+<main>
+
+  <div class="parte" data-n="01"><small>Exemplo 1</small><h2>Classificação: vai presencial?</h2><p>A árvore responde <b>qual classe</b>, usando Entropia e Ganho de Informação.</p></div>
+
+  <div class="parte-cla">
+
+  <section id="intro">
+    <h2><span class="n">1</span>Introdução</h2>
+    <p class="lead">A Árvore de Decisão é um dos algoritmos mais importantes para quem estuda Machine Learning: ela aprende
+      uma sequência de perguntas <b>Sim/Não</b> que separa os dados em classes. Vamos construí-la com os cálculos de
+      <b>Entropia</b> e <b>Ganho de Informação</b>. Primeiro, a intuição.</p>
+  </section>
+
+  <section id="cenario">
+    <h2><span class="n">2</span>O cenário</h2>
+    <p class="lead">Modelo híbrido <b>sem escala</b>: cada pessoa escolhe os dias em que vai ao escritório.</p>
+    <div class="regras">
+      <div class="regra"><b>Cientistas de dados</b>vão presencial só na segunda-feira.</div>
+      <div class="regra"><b>Demais pessoas da área</b>vão dois dias: segunda e terça (dia preferencial).</div>
+      <div class="regra destaque"><b>Ou seja…</b>segunda-feira é presencial para todos.</div>
+    </div>
+    <p>Cada linha é <b>uma pessoa em um dia</b>. Alvo: <b>Presencial?</b> <span class="tag p">Sim</span> <span class="tag h">Não</span></p>
+    <div class="wrap">
+      <table id="tabela">
+        <thead><tr><th>É cientista de dados?</th><th>É segunda?</th><th>É terça?</th><th>Presencial?</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="intuicao">
+    <h2><span class="n">3</span>Intuição: traçando "retas"</h2>
+    <p class="lead">Cada ponto é uma situação. A árvore procura <b>retas</b> (perguntas Sim/Não) que deixem cada região com
+      uma só cor. A cada reta, a árvore ganha um nó.</p>
+    <div class="btns" id="passos">
+      <button data-p="0" class="on">Só os pontos</button>
+      <button data-p="1">1ª reta: é segunda?</button>
+      <button data-p="2">2ª reta: é cientista?</button>
+      <button data-p="3">3ª reta: é terça?</button>
+    </div>
+    <p id="legenda-passo"></p>
+    <div class="row">
+      <div class="card"><h3>Quadrante</h3><svg id="quadrante" viewBox="0 0 420 380" role="img" aria-label="Quadrante cientista por segunda"></svg></div>
+      <div class="card"><h3>Árvore</h3><svg id="arvore-passo" class="arv" role="img" aria-label="Árvore sendo construída"></svg></div>
+    </div>
+  </section>
+
+  <section id="entropia">
+    <h2><span class="n">4</span>Entropia e Ganho de Informação</h2>
+    <p class="lead">Por que a árvore pergunta <b>"É segunda?"</b> primeiro? Ela mede a <b>mistura</b> de cada grupo e escolhe
+      a pergunta que mais reduz essa mistura.</p>
+    <div class="row">
+      <div class="card">
+        <h3>Entropia — quanta mistura existe no grupo</h3>
+        <div class="formula">H(S) = − Σ p<sub>i</sub> · log<sub>2</sub>(p<sub>i</sub>)</div>
+        <small><b>0</b> = grupo puro (todos Sim ou todos Não) · <b>1</b> = metade/metade (mistura máxima)</small>
+      </div>
+      <div class="card">
+        <h3>Ganho de Informação — quanto a pergunta reduz a mistura</h3>
+        <div class="formula">IG = H(pai) − Σ (|filho| / |pai|) · H(filho)</div>
+        <small>Em cada nó, a árvore escolhe a pergunta com <b>maior ganho</b>.</small>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="passo-topo">
+        <h3 style="margin:0">Exemplo passo a passo</h3>
+        <div class="trilha" id="trilha"></div>
+      </div>
+      <div id="passo-corpo"></div>
+      <div class="btns" style="margin-bottom:0">
+        <button id="passo-ant">◀ Anterior</button>
+        <button id="passo-prox" class="prim">Próximo ▶</button>
+        <button id="passo-reset">Recomeçar</button>
+      </div>
+    </div>
+
+    <h3 style="margin:32px 0 4px">Repetindo para todas as perguntas, nível a nível</h3>
+    <p class="lead" style="margin-bottom:12px">A linha destacada é a pergunta escolhida em cada nível.</p>
+    <div class="stack" id="niveis"></div>
+  </section>
+
+  <section id="feriado">
+    <h2><span class="n">5</span>Extrapolando: e se a segunda for feriado?</h2>
+    <p class="lead">Nova variável <b>"É feriado?"</b>: se a segunda é feriado, <b>ninguém vai presencial</b>.
+      Acrescentamos 2 linhas — uma segunda-feriado para cientista e outra para os demais.</p>
+    <div class="wrap">
+      <table id="tabela2">
+        <thead><tr><th>É feriado?</th><th>É cientista de dados?</th><th>É segunda?</th><th>É terça?</th><th>Presencial?</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="stack" id="niveis2" style="margin-top:16px"></div>
+    <p class="nota"><b>Surpresa:</b> a intuição diria para perguntar "É feriado?" só <b>dentro</b> do ramo da segunda.
+      Mas o algoritmo coloca <b>feriado na raiz</b>: é a pergunta que mais limpa a mistura de uma vez.
+      A Árvore de Decisão é <b>gulosa</b> — escolhe a melhor pergunta em cada passo, não a que parece mais lógica para nós.
+      No ramo "não é feriado" sobram exatamente os 6 casos do exemplo base, então ali dentro cresce a mesma árvore de antes.</p>
+    <div class="card" style="margin-top:16px"><h3>Árvore com feriado</h3><svg id="arvore-v2" class="arv" role="img" aria-label="Árvore com feriado"></svg></div>
+  </section>
+
+  <section id="classificar">
+    <h2><span class="n">6</span>Classifique um novo dado</h2>
+    <p class="lead">Responda as perguntas na ordem da árvore final. A cada resposta, a árvore revela os dois ramos daquela
+      pergunta e acende o caminho escolhido. A próxima pergunta pisca em laranja.</p>
+    <div class="row classif">
+      <div class="card">
+        <div id="perguntas"></div>
+        <div id="resultado"></div>
+        <div class="btns" style="margin-bottom:0"><button id="reset">↺ Limpar respostas</button></div>
+      </div>
+      <div class="card"><svg id="arvore-final" class="arv" role="img" aria-label="Árvore final"></svg></div>
+    </div>
+  </section>
+
+  <section id="pros">
+    <h2><span class="n">7</span>Pontos positivos e negativos</h2>
+    <p class="lead">O que este exemplo mostrou sobre a Árvore de Decisão de classificação.</p>
+    <div class="row">
+      <div class="card pc bom"><h3>Pontos positivos</h3>
+        <ul>
+          <li><b>Fácil de explicar.</b> O modelo vira regras Sim/Não que qualquer pessoa lê: "se é segunda, vai presencial".</li>
+          <li><b>Captura interações sozinha.</b> "Terça" só importa para quem não é cientista — a árvore descobriu isso sem a gente dizer.</li>
+          <li><b>Seleciona variáveis.</b> Pergunta que não ajuda não entra: "É terça?" teve ganho 0 na raiz.</li>
+          <li><b>Pouco preparo dos dados.</b> Não precisa normalizar; aceita variáveis Sim/Não, categóricas e numéricas.</li>
+          <li><b>Rápida</b> para treinar e para prever.</li>
+        </ul>
+      </div>
+      <div class="card pc ruim"><h3>Pontos negativos</h3>
+        <ul>
+          <li><b>Gulosa.</b> Escolhe a melhor pergunta em cada passo, não a melhor árvore — "feriado" foi parar na raiz.</li>
+          <li><b>Instável.</b> Duas linhas novas (os feriados) mudaram a raiz inteira; empates dependem do <code>random_state</code>.</li>
+          <li><b>Overfitting.</b> Deixada crescer até as folhas ficarem puras, ela decora os dados. Com dados reais e ruído, é preciso limitar (<code>max_depth</code>, <code>min_samples_leaf</code>) ou podar.</li>
+          <li><b>Só cortes retos.</b> As divisões são sempre paralelas aos eixos (as "retas" do quadrante); uma fronteira diagonal vira escada.</li>
+          <li><b>Viés da entropia.</b> Variáveis com muitos valores distintos (um ID, por exemplo) parecem ter ganho alto sem ter valor real.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+
+  </div>
+
+  <div class="parte" data-n="02"><small>Exemplo 2</small><h2>Regressão: consumo de cerveja em São Paulo</h2><p>A árvore responde <b>quanto</b>, usando MSE e Redução do erro.</p></div>
+  <div class="parte-reg">
+
+  <section id="r-intro">
+    <h2><span class="n">1</span>Introdução</h2>
+    <p class="lead">No exemplo 1 a árvore respondia <b>"qual classe?"</b>. Agora ela responde <b>"quanto?"</b>: quantos litros
+      de cerveja serão consumidos em um dia. A ideia é a mesma — uma sequência de perguntas — mas o jeito de medir
+      a qualidade de cada pergunta muda.</p>
+    <div class="wrap">
+      <table>
+        <thead><tr><th></th><th>Classificação (exemplo 1)</th><th>Regressão (exemplo 2)</th></tr></thead>
+        <tbody>
+          <tr><td><b>Mede a "bagunça" do nó com</b></td><td>Entropia</td><td><b>MSE</b> (variância)</td></tr>
+          <tr><td><b>Escolhe a pergunta pela</b></td><td>Ganho de Informação</td><td><b>Redução do MSE</b></td></tr>
+          <tr><td><b>A folha responde</b></td><td>a classe da maioria</td><td>a <b>média</b> do grupo</td></tr>
+          <tr><td><b>Perguntas</b></td><td>Sim/Não</td><td>Sim/Não e <b>"valor &gt; limiar?"</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="r-dados">
+    <h2><span class="n">2</span>Os dados</h2>
+    <p class="lead">Dataset <b>Beer Consumption – São Paulo</b> (Kaggle): consumo diário de cerveja em 2015, junto com o clima.
+      Usamos <b>temperatura máxima</b> e <b>fim de semana</b>; a <b>chuva</b> entra só na parte 5.
+      No CSV o consumo aparece como <code>25.461</code>: o ponto é separador de milhar, ou seja, <b>25.461 litros</b>.</p>
+    <div class="regras" id="r-kpis"></div>
+    <div class="wrap">
+      <table id="r-tabela">
+        <thead><tr><th>Data</th><th>Temp. máxima</th><th>Fim de semana?</th><th>Chuva</th><th>Consumo</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="nota">Sem árvore nenhuma, o melhor palpite para qualquer dia é a <b>média</b>. Esse é o ponto de partida —
+      a árvore vai tentar errar menos que isso.</p>
+  </section>
+
+  <section id="r-intuicao">
+    <h2><span class="n">3</span>Intuição: cortes e "degraus"</h2>
+    <p class="lead">Cada ponto é um dia. Na classificação as retas separavam <b>cores</b>; aqui cada corte divide os dias em
+      grupos e a previsão de cada grupo é a <b>média</b> ali dentro — uma linha horizontal. O resultado é uma previsão em degraus.</p>
+    <div class="btns" id="r-passos">
+      <button data-p="0" class="on">Sem pergunta</button>
+      <button data-p="1">1º corte: temperatura</button>
+      <button data-p="2">2º corte: fim de semana</button>
+    </div>
+    <p id="r-legenda-passo"></p>
+    <div class="row">
+      <div class="card"><h3>Temperatura máxima × consumo</h3>
+        <svg id="r-dispersao" viewBox="0 0 520 370" role="img" aria-label="Dispersão de temperatura máxima por consumo"></svg>
+        <div class="legenda"><span><i style="background:var(--laranja)"></i>Fim de semana</span><span><i style="background:var(--azul)"></i>Dia útil</span></div>
+      </div>
+      <div class="card"><h3>Árvore</h3><svg id="r-arvore-passo" class="arv" role="img" aria-label="Árvore sendo construída"></svg></div>
+    </div>
+  </section>
+
+  <section id="r-mse">
+    <h2><span class="n">4</span>MSE e Redução do erro</h2>
+    <p class="lead">Por que a árvore corta primeiro pela <b>temperatura</b>? Ela mede o <b>espalhamento</b> do consumo em cada
+      grupo e escolhe a pergunta que mais reduz esse espalhamento.</p>
+    <div class="row">
+      <div class="card">
+        <h3>MSE — quão espalhado está o consumo no grupo</h3>
+        <div class="formula">MSE = (1/n) · Σ (y<sub>i</sub> − ȳ)²</div>
+        <small><b>0</b> = todos os dias iguais à média · quanto maior, pior a média como previsão</small>
+      </div>
+      <div class="card">
+        <h3>Redução — quanto a pergunta diminui o MSE</h3>
+        <div class="formula">ΔMSE = MSE(pai) − Σ (n<sub>filho</sub> / n<sub>pai</sub>) · MSE(filho)</div>
+        <small>Em cada nó, a árvore escolhe a pergunta com <b>maior redução</b>.</small>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="passo-topo">
+        <h3 style="margin:0">Exemplo passo a passo — a raiz</h3>
+        <div class="trilha" id="r-trilha"></div>
+      </div>
+      <div id="r-passo-corpo"></div>
+      <div class="btns" style="margin-bottom:0">
+        <button id="r-passo-ant">◀ Anterior</button>
+        <button id="r-passo-prox" class="prim">Próximo ▶</button>
+        <button id="r-passo-reset">Recomeçar</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>Teste você: onde cortar a temperatura?</h3>
+      <p style="margin:0 0 8px">Arraste o limiar. A curva mostra a redução do MSE para <b>cada</b> limiar possível — a árvore fica com o pico.</p>
+      <svg id="r-curva" viewBox="0 0 520 210" role="img" aria-label="Redução do MSE por limiar de temperatura"></svg>
+      <div class="temp" style="margin:8px 0 4px"><input type="range" id="r-limiar"><output id="r-limiar-out"></output></div>
+      <div class="row" id="r-limiar-lados" style="margin-top:8px"></div>
+      <div class="btns" style="margin-bottom:0"><button id="r-ir-melhor" class="prim">Ir para o melhor limiar</button></div>
+    </div>
+
+    <h3 style="margin:32px 0 4px">Repetindo para todas as perguntas, nível a nível</h3>
+    <p class="lead" style="margin-bottom:12px">Para cada variável, a árvore acha o melhor corte. A linha destacada é a escolhida.</p>
+    <div class="stack" id="r-niveis"></div>
+  </section>
+
+  <section id="r-chuva">
+    <h2><span class="n">5</span>Extrapolando: e se a chuva entrar?</h2>
+    <p class="lead">Faz sentido pensar que dia chuvoso tem menos consumo. Colocamos a <b>chuva (mm)</b> na disputa e repetimos as contas.</p>
+    <div class="card" id="r-chuva-efeito"></div>
+    <div class="card" style="margin-top:16px">
+      <h3>Como fica cada nó: redução do MSE de cada variável</h3>
+      <div class="row" id="r-barras"></div>
+    </div>
+    <p class="nota"><b>Surpresa:</b> a chuva <b>reduz</b> o erro, mas <b>perde em todos os nós</b> para temperatura e fim de semana.
+      A árvore é <b>gulosa</b> — em cada nó fica só com a melhor pergunta. Resultado: a árvore com chuva é <b>idêntica</b> à
+      anterior, e o erro também.</p>
+    <div class="row" style="margin-top:16px">
+      <div class="card"><h3>Árvore com chuva na disputa</h3><svg id="r-arvore-v2" class="arv" role="img" aria-label="Árvore com chuva"></svg></div>
+      <div class="card" style="flex:0 1 380px"><h3>Erro médio de cada modelo</h3>
+        <div class="wrap"><table id="r-erros"><thead><tr><th>Modelo</th><th>MAE</th><th>RMSE</th></tr></thead><tbody></tbody></table></div>
+        <small>MAE = erro absoluto médio, em litros.</small>
+      </div>
+    </div>
+  </section>
+
+  <section id="r-estimar">
+    <h2><span class="n">6</span>Estime o consumo de um dia</h2>
+    <p class="lead">Responda as perguntas na ordem da árvore. A cada resposta, a árvore revela os dois ramos daquela pergunta e
+      acende o caminho. A estimativa é a média dos dias parecidos.</p>
+    <div class="row classif">
+      <div class="card">
+        <div id="r-perguntas">
+          <div class="pergunta" data-f="t">
+            <span><b class="num">1</b>Qual a temperatura máxima?</span>
+            <div class="temp"><input type="range" id="r-temp-in" min="14" max="37" step="0.5" value="26"><output id="r-temp-out"></output>
+              <button id="r-temp-ok" class="prim">Responder</button></div>
+          </div>
+          <div class="pergunta" data-f="w">
+            <span><b class="num">2</b>É fim de semana?</span>
+            <div class="btns" data-f="w"><button data-v="1">Sim</button><button data-v="0">Não</button></div>
+          </div>
+        </div>
+        <div id="r-resultado"></div>
+        <div class="btns" style="margin-bottom:0"><button id="r-reset">↺ Limpar respostas</button></div>
+        <p style="margin:12px 0 0;font-size:.9rem;opacity:.8">A chuva não é perguntada: a árvore não usa essa variável.</p>
+      </div>
+      <div class="card"><svg id="r-arvore-final" class="arv" role="img" aria-label="Árvore final"></svg></div>
+    </div>
+  </section>
+
+  <section id="r-pros">
+    <h2><span class="n">7</span>Pontos positivos e negativos</h2>
+    <p class="lead">O que este exemplo mostrou sobre a Árvore de Regressão.</p>
+    <div class="row">
+      <div class="card pc bom"><h3>Pontos positivos</h3>
+        <ul>
+          <li><b>Fácil de explicar.</b> Cada folha é a média de dias parecidos: "dia quente de fim de semana ≈ 30.817 litros".</li>
+          <li><b>Captura não linearidade e interação</b> sem criar variáveis novas: o efeito do fim de semana aparece dentro de cada faixa de temperatura.</li>
+          <li><b>Ignora variáveis fracas.</b> A chuva ficou de fora: importância 0.</li>
+          <li><b>Pouco preparo dos dados.</b> Não precisa normalizar; temperatura (°C) e Sim/Não convivem na mesma árvore.</li>
+          <li><b>Ganho rápido.</b> Com só 2 perguntas, o erro médio cai de 3.609 L para 2.332 L.</li>
+        </ul>
+      </div>
+      <div class="card pc ruim"><h3>Pontos negativos</h3>
+        <ul>
+          <li><b>Previsão em degraus.</b> Só existem 4 respostas possíveis: um dia útil de 25,8 °C e outro de 25,9 °C recebem previsões que diferem em mais de 4.700 litros.</li>
+          <li><b>Não extrapola.</b> Um dia de 40 °C recebe a mesma previsão de um dia de 26 °C (a média da folha). A árvore nunca prevê além do que viu no treino.</li>
+          <li><b>Overfitting.</b> Com mais níveis surgem folhas com poucos dias — com profundidade 3 já aparece uma folha com só 6 dias.</li>
+          <li><b>Instável.</b> O limiar de 25,85 °C pode mudar bastante com dados de outro ano.</li>
+          <li><b>Erro ainda alto</b> (± 2.332 L): combinações de árvores (Random Forest, Gradient Boosting) costumam errar menos.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  </div>
+</main>
+
+<div class="controle" role="navigation" aria-label="Navegar entre seções">
+  <button id="sec-ant" aria-label="Seção anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <span id="sec-rot" aria-live="polite">Capa</span>
+  <button id="sec-prox" aria-label="Próxima seção"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+</div>
+
+<footer class="rodape"><div class="in"><span>Árvores de Decisão · Python + scikit-learn</span><a href="#topo">Voltar ao início ↑</a></div></footer>
+
+<script>
+// ===== Exemplo 1 — Classificação
+(() => {
+
+const NS = "http://www.w3.org/2000/svg";
+const COR = { S: "#F28C28", N: "#0B2545" };
+const NOME = { S: "Sim", N: "Não" };
+
+// segunda é presencial para todos (se não for feriado); quem não é cientista também vai na terça
+const regra = d => (d.s && !d.f) || (d.t && !d.c) ? "S" : "N";
+const linha = ([c, s, t, f = 0]) => { const d = { c, s, t, f }; d.y = regra(d); return d; };
+const dados = [[1,1,0],[1,0,1],[1,0,0],[0,1,0],[0,0,1],[0,0,0]].map(linha);
+const dados2 = [...dados, linha([1,1,0,1]), linha([0,1,0,1])];
+
+const sn = v => v ? "Sim" : "Não";
+const tag = y => `<span class="tag ${y === "S" ? "p" : "h"}">${NOME[y]}</span>`;
+const pontos = s => [...s].map(y => `<span class="dot ${y}"></span>`).join("");
+const el = (tagName, attrs, parent, txt) => {
+  const e = document.createElementNS(NS, tagName);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (txt != null) e.textContent = txt;
+  parent && parent.appendChild(e);
+  return e;
+};
+
+// ---- Tabelas
+document.querySelector("#tabela tbody").innerHTML = dados.map(d =>
+  `<tr><td>${sn(d.c)}</td><td>${sn(d.s)}</td><td>${sn(d.t)}</td><td>${tag(d.y)}</td></tr>`).join("");
+document.querySelector("#tabela2 tbody").innerHTML = dados2.map(d =>
+  `<tr${d.f ? ' class="best"' : ""}><td>${sn(d.f)}</td><td>${sn(d.c)}</td><td>${sn(d.s)}</td><td>${sn(d.t)}</td><td>${tag(d.y)}</td></tr>`).join("");
+
+// ---- Quadrante: X = cientista, Y = segunda
+const q = document.getElementById("quadrante");
+const X0 = 70, Y0 = 20, W = 320, H = 300;
+const qx = c => X0 + (c ? 0.75 : 0.25) * W;
+const qy = d => Y0 + (d.s ? 0.25 : 0.75 + (d.t ? -0.08 : 0.08)) * H;
+el("rect", { x: X0, y: Y0, width: W, height: H, rx: 6, fill: "none", style: "stroke: var(--borda); stroke-width: 2" }, q);
+["Não", "Sim"].forEach((l, i) => {
+  el("text", { x: qx(i), y: Y0 + H + 22, "text-anchor": "middle", "font-size": 14 }, q, l);
+  el("text", { x: X0 - 10, y: Y0 + (i ? 0.25 : 0.75) * H + 5, "text-anchor": "end", "font-size": 14 }, q, l);
+});
+el("text", { x: X0 + W / 2, y: Y0 + H + 46, "text-anchor": "middle", class: "lbl" }, q, "É cientista de dados?");
+el("text", { x: 16, y: Y0 + H / 2, class: "lbl", "text-anchor": "middle", transform: `rotate(-90 16 ${Y0 + H / 2})` }, q, "É segunda?");
+const retas = [
+  { passo: 1, a: [X0, Y0 + H / 2, X0 + W, Y0 + H / 2] },
+  { passo: 2, a: [X0 + W / 2, Y0 + H / 2, X0 + W / 2, Y0 + H] },
+  { passo: 3, a: [X0, Y0 + 0.75 * H, X0 + W / 2, Y0 + 0.75 * H] },
+].map(r => ({ ...r, e: el("line", { x1: r.a[0], y1: r.a[1], x2: r.a[2], y2: r.a[3], "stroke-width": 3, "stroke-dasharray": "9 6" }, q) }));
+dados.forEach(d => {
+  el("circle", { cx: qx(d.c), cy: qy(d), r: 17, fill: COR[d.y], style: "stroke: var(--linha); stroke-width: 1.5" }, q);
+  if (!d.s) el("text", { x: qx(d.c) + 24, y: qy(d) + 4, "font-size": 12 }, q, d.t ? "terça" : "outro dia");
+});
+
+// ---- Árvores
+// Nó interno: f = variável, sim/nao = filhos. "de": passo em que aparece; "pendente": passo em que aparece como "misturado…"
+const ARV_BASE = {
+  raiz: "seg",
+  nos: {
+    seg:  { txt: "É segunda?", f: "s", sim: "sSeg", nao: "cie", de: 1 },
+    sSeg: { folha: "S", de: 1 },
+    cie:  { txt: "É cientista?", f: "c", sim: "nCie", nao: "ter", de: 2, pendente: 1 },
+    nCie: { folha: "N", de: 2 },
+    ter:  { txt: "É terça?", f: "t", sim: "sTer", nao: "nTer", de: 3, pendente: 2 },
+    nTer: { folha: "N", de: 3 },
+    sTer: { folha: "S", de: 3 },
+  },
+};
+const ARV_V2 = {
+  raiz: "fer",
+  nos: {
+    fer:  { txt: "É feriado?", f: "f", sim: "nFer", nao: "seg" },
+    nFer: { folha: "N" },
+    seg:  { txt: "É segunda?", f: "s", sim: "sSeg", nao: "cie" },
+    sSeg: { folha: "S" },
+    cie:  { txt: "É cientista?", f: "c", sim: "nCie", nao: "ter" },
+    nCie: { folha: "N" },
+    ter:  { txt: "É terça?", f: "t", sim: "sTer", nao: "nTer" },
+    nTer: { folha: "N" },
+    sTer: { folha: "S" },
+  },
+};
+
+// Layout de árvore: cada filho fica a uma distância fixa do pai ("Não" à esquerda, "Sim" à direita),
+// assim todos os galhos têm o mesmo ângulo; depois o desenho é centralizado
+const NO_L = 150, NO_A = 44, DX = 100, DY = 96, MARGEM = 12;
+function layout(arv) {
+  let prof = 0;
+  const visita = (id, x, d) => {
+    const n = arv.nos[id];
+    Object.assign(n, { x, y: NO_A / 2 + MARGEM + d * DY });
+    prof = Math.max(prof, d);
+    if (n.folha) return;
+    visita(n.nao, x - DX, d + 1);
+    visita(n.sim, x + DX, d + 1);
+  };
+  visita(arv.raiz, 0, 0);
+  const xs = Object.values(arv.nos).map(n => n.x);
+  const min = Math.min(...xs) - NO_L / 2 - MARGEM;
+  Object.values(arv.nos).forEach(n => n.x -= min);
+  arv.W = Math.max(...xs) - Math.min(...xs) + NO_L + 2 * MARGEM;
+  arv.H = NO_A + 2 * MARGEM + prof * DY;
+}
+layout(ARV_BASE);
+layout(ARV_V2);
+
+// mostrar: conjunto opcional de nós visíveis (usado pelo classificador para a árvore ir aparecendo)
+function desenharArvore(svg, arv, { passo = 99, caminho = [], proximo = null, mostrar = null } = {}) {
+  svg.innerHTML = "";
+  svg.setAttribute("viewBox", `0 0 ${arv.W} ${arv.H}`);
+  const N = arv.nos, de = id => N[id].de || 0;
+  const visivel = id => (!mostrar || mostrar.has(id)) &&
+    (passo >= de(id) || (N[id].pendente && passo === N[id].pendente));
+  if (passo === 0) {
+    el("text", { x: arv.W / 2, y: arv.H / 2, "text-anchor": "middle", "font-size": 16 }, svg, "Ainda nenhuma pergunta: 3 Sim, 3 Não");
+    return;
+  }
+  for (const a in N) {
+    if (N[a].folha) continue;
+    [[N[a].nao, "Não"], [N[a].sim, "Sim"]].forEach(([b, l]) => {
+      if (!visivel(a) || !visivel(b) || passo < de(a)) return;
+      const A = N[a], B = N[b], ativo = caminho.includes(a) && caminho.includes(b);
+      // conector em ângulo reto: desce do pai, vai até a coluna do filho e desce até ele
+      const y1 = A.y + NO_A / 2, y2 = B.y - NO_A / 2, meio = (y1 + y2) / 2;
+      el("path", { d: `M${A.x},${y1} V${meio} H${B.x} V${y2}`, fill: "none",
+                   class: "edge" + (ativo ? " ativo" : "") }, svg);
+      el("text", { x: B.x, y: (meio + y2) / 2 + 4, "text-anchor": "middle",
+                   class: "lbl" + (ativo ? " ativo" : "") }, svg, l);
+    });
+  }
+  for (const id in N) {
+    if (!visivel(id)) continue;
+    const n = N[id], misturado = passo < de(id);
+    const cls = id === proximo ? " proximo" : caminho.includes(id) ? " ativo" : "";
+    const g = el("g", { class: "node" + cls }, svg);
+    g.classList.add(n.folha ? "folha" : "questao");
+    const r = el("rect", { x: n.x - NO_L / 2, y: n.y - NO_A / 2, width: NO_L, height: NO_A, rx: n.folha ? NO_A / 2 : 10,
+                           fill: n.folha ? COR[n.folha] : "#FFFFFF" }, g);
+    if (misturado) { r.setAttribute("fill", "none"); r.setAttribute("stroke-dasharray", "6 5"); }
+    const t = el("text", { x: n.x, y: n.y + 6, "text-anchor": "middle", "font-weight": 700, "font-size": n.folha ? 15 : 17 }, g,
+                 misturado ? "misturado…" : n.folha ? `Presencial: ${NOME[n.folha]}` : n.txt);
+    if (!misturado) t.style.fill = n.folha === "N" ? "#FFFFFF" : "#000000";
+  }
+}
+
+// Percorre a árvore com as respostas dadas; para na primeira pergunta sem resposta
+function percorrer(arv, resp) {
+  const cam = [arv.raiz];
+  let id = arv.raiz;
+  while (!arv.nos[id].folha) {
+    const v = resp[arv.nos[id].f];
+    if (v == null) return { cam, proximo: id };
+    id = v ? arv.nos[id].sim : arv.nos[id].nao;
+    cam.push(id);
+  }
+  return { cam, folha: arv.nos[id].folha };
+}
+
+// ---- Passos da intuição
+const textoPasso = [
+  "Seis situações: 3 Sim e 3 Não, tudo misturado.",
+  "Reta 1 — É segunda? Em cima, tudo laranja: segunda é presencial para todos. Embaixo ainda está misturado.",
+  "Reta 2 — É cientista? Embaixo à direita, tudo azul: cientista fica em casa fora da segunda. Sobra um quadrante misturado.",
+  "Reta 3 — É terça? Resolve o último quadrante: quem não é cientista vai na terça. Agora toda região tem uma só cor.",
+];
+const sp = document.getElementById("arvore-passo");
+function mostrarPasso(n) {
+  retas.forEach(({ passo, e }) => e.style.stroke = passo > n ? "none" : passo === n ? "#F28C28" : "var(--linha)");
+  document.querySelectorAll("#passos button").forEach(b => b.classList.toggle("on", +b.dataset.p === n));
+  document.getElementById("legenda-passo").textContent = textoPasso[n];
+  desenharArvore(sp, ARV_BASE, { passo: n });
+}
+document.getElementById("passos").addEventListener("click", e => {
+  if (e.target.dataset.p != null) mostrarPasso(+e.target.dataset.p);
+});
+mostrarPasso(0);
+
+// ---- Exemplo passo a passo (entropia da raiz e ganho de "É segunda?")
+const F = (...l) => `<div class="formula">${l.join("<br>")}</div>`;
+const PASSOS = [
+  { fase: "Entropia da raiz", t: "1. Contamos as classes",
+    c: `<p>Antes de qualquer pergunta, temos os 6 casos juntos no nó raiz:</p>
+        <p><span class="grupo"><b>Raiz</b>${pontos("SSSNNN")}</span></p>
+        <p><b>3 Sim</b> (laranja) e <b>3 Não</b> (azul), total <b>6</b>.</p>` },
+  { fase: "Entropia da raiz", t: "2. Calculamos as proporções",
+    c: `<p>Proporção = quantos casos daquela classe ÷ total.</p>
+        ${F("p(Sim) = 3 / 6 = <span class='res'>0,5</span>", "p(Não) = 3 / 6 = <span class='res'>0,5</span>")}` },
+  { fase: "Entropia da raiz", t: "3. Aplicamos o log₂ em cada proporção",
+    c: `<p>O log₂ responde: "2 elevado a quanto dá esse número?". Como 2<sup>−1</sup> = 0,5:</p>
+        ${F("log₂(0,5) = <span class='res'>−1</span>")}
+        <p>O log de um número menor que 1 é sempre <b>negativo</b> — por isso a fórmula tem um sinal de menos na frente.</p>` },
+  { fase: "Entropia da raiz", t: "4. Multiplicamos cada proporção pelo seu log",
+    c: `${F("Sim: 0,5 × (−1) = −0,5", "Não: 0,5 × (−1) = −0,5")}
+        <p>Cada classe contribui com uma parte da "mistura".</p>` },
+  { fase: "Entropia da raiz", t: "5. Somamos e trocamos o sinal",
+    c: `${F("H(raiz) = −( −0,5 + (−0,5) ) = −(−1) = <span class='res'>1</span>")}
+        <p class="nota" style="margin-top:0"><b>H = 1</b> é a <b>mistura máxima</b> para duas classes: metade Sim, metade Não.
+        Sem perguntar nada, não temos como adivinhar.</p>` },
+  { fase: "Ganho de \"É segunda?\"", t: "6. Separamos os casos pela pergunta",
+    c: `<p>Fazemos a pergunta <b>"É segunda?"</b> e cada caso vai para um ramo:</p>
+        <p><span class="grupo"><b>Sim</b>${pontos("SS")}</span><span class="grupo"><b>Não</b>${pontos("SNNN")}</span></p>
+        <p>Ramo Sim: <b>2 casos</b> (2 Sim, 0 Não). Ramo Não: <b>4 casos</b> (1 Sim, 3 Não).</p>` },
+  { fase: "Ganho de \"É segunda?\"", t: "7. Entropia do ramo Sim",
+    c: `<p><span class="grupo"><b>Sim</b>${pontos("SS")}</span> Todos são Sim: o grupo é <b>puro</b>.</p>
+        ${F("p(Sim) = 2/2 = 1  →  log₂(1) = 0", "H(ramo Sim) = −(1 × 0) = <span class='res'>0</span>")}
+        <p>Grupo puro sempre tem entropia <b>zero</b>: não há dúvida nenhuma.</p>` },
+  { fase: "Ganho de \"É segunda?\"", t: "8. Entropia do ramo Não — proporções e logs",
+    c: `<p><span class="grupo"><b>Não</b>${pontos("SNNN")}</span> 1 Sim e 3 Não, total 4.</p>
+        ${F("p(Sim) = 1/4 = 0,25  →  log₂(0,25) = −2", "p(Não) = 3/4 = 0,75  →  log₂(0,75) ≈ −0,415")}` },
+  { fase: "Ganho de \"É segunda?\"", t: "9. Entropia do ramo Não — produto e soma",
+    c: `${F("0,25 × (−2) = −0,500", "0,75 × (−0,415) = −0,311",
+            "H(ramo Não) = −( −0,500 + (−0,311) ) = <span class='res'>0,811</span>")}
+        <p>Ainda misturado, mas <b>menos</b> que a raiz (0,811 &lt; 1).</p>` },
+  { fase: "Ganho de \"É segunda?\"", t: "10. Média ponderada dos ramos",
+    c: `<p>Cada ramo pesa de acordo com quantos casos ele tem: o ramo Sim tem 2 de 6, o ramo Não tem 4 de 6.</p>
+        ${F("H(filhos) = (2/6) × 0 + (4/6) × 0,811", "= 0 + 0,541 = <span class='res'>0,541</span>")}` },
+  { fase: "Ganho de \"É segunda?\"", t: "11. Ganho de Informação",
+    c: `${F("IG(É segunda?) = H(raiz) − H(filhos)", "= 1 − 0,541 = <span class='res'>0,459</span>")}
+        <p class="nota" style="margin-top:0">A pergunta "É segunda?" reduz a mistura de <b>1</b> para <b>0,541</b>.
+        Fazendo a mesma conta para as outras perguntas: <b>É cientista?</b> = 0,082 e <b>É terça?</b> = 0.
+        Maior ganho → <b>"É segunda?" vira a raiz</b>.</p>` },
+];
+let passoAtual = 0;
+const trilha = document.getElementById("trilha");
+trilha.innerHTML = PASSOS.map((_, i) => `<i data-i="${i}" title="Passo ${i + 1}"></i>`).join("");
+function mostrarCalculo(i) {
+  passoAtual = Math.max(0, Math.min(PASSOS.length - 1, i));
+  const p = PASSOS[passoAtual];
+  document.getElementById("passo-corpo").innerHTML =
+    `<div class="fase" style="margin-top:14px">${p.fase} · passo ${passoAtual + 1} de ${PASSOS.length}</div><h4>${p.t}</h4>${p.c}`;
+  trilha.querySelectorAll("i").forEach((b, k) => b.className = k < passoAtual ? "feito" : k === passoAtual ? "atual" : "");
+  document.getElementById("passo-ant").disabled = passoAtual === 0;
+  document.getElementById("passo-prox").disabled = passoAtual === PASSOS.length - 1;
+}
+document.getElementById("passo-ant").onclick = () => mostrarCalculo(passoAtual - 1);
+document.getElementById("passo-prox").onclick = () => mostrarCalculo(passoAtual + 1);
+document.getElementById("passo-reset").onclick = () => mostrarCalculo(0);
+trilha.onclick = e => { if (e.target.dataset.i != null) mostrarCalculo(+e.target.dataset.i); };
+mostrarCalculo(0);
+
+// ---- Tabelas de ganho por nível
+const entropia = g => {
+  if (!g.length) return 0;
+  const p = g.filter(d => d.y === "S").length / g.length;
+  return [p, 1 - p].filter(x => x > 0).reduce((s, x) => s - x * Math.log2(x), 0);
+};
+const fmt = x => x.toFixed(3).replace(".", ",");
+const conta = g => `${g.filter(d => d.y === "S").length} Sim / ${g.filter(d => d.y === "N").length} Não`;
+const NOME_F = { f: "É feriado?", c: "É cientista?", s: "É segunda?", t: "É terça?" };
+const pontosDe = g => pontos(g.map(d => d.y).sort().reverse().join(""));
+const ramo = g => g.length
+  ? `<div class="ramo">${pontosDe(g)}</div>${conta(g)} · H = ${fmt(entropia(g))}`
+  : `<div class="ramo"><i>vazio</i></div>`;
+
+function cartaoNivel(titulo, grupo, feats, nota) {
+  const hPai = entropia(grupo);
+  const linhas = feats.map(f => {
+    const sim = grupo.filter(d => d[f]), nao = grupo.filter(d => !d[f]);
+    const ig = hPai - (sim.length * entropia(sim) + nao.length * entropia(nao)) / grupo.length;
+    return { f, sim, nao, ig };
+  }).sort((a, b) => b.ig - a.ig);
+  const max = linhas[0].ig;
+  return `<div class="card">
+    <h3>${titulo}</h3>
+    <p style="margin:0 0 12px"><span class="grupo">${pontosDe(grupo)}</span>
+      ${conta(grupo)} → H = <b>${fmt(hPai)}</b></p>
+    <div class="wrap"><table>
+      <thead><tr><th>Pergunta</th><th>Ramo Sim</th><th>Ramo Não</th><th>Ganho</th></tr></thead>
+      <tbody>${linhas.map(l => `<tr class="${Math.abs(l.ig - max) < 1e-9 ? "best" : ""}">
+        <td>${NOME_F[l.f]}</td>
+        <td>${ramo(l.sim)}</td>
+        <td>${ramo(l.nao)}</td>
+        <td>${fmt(l.ig)}</td></tr>`).join("")}</tbody>
+    </table></div>
+    ${nota ? `<p class="nota">${nota}</p>` : ""}
+  </div>`;
+}
+
+const naoSeg = dados.filter(d => !d.s);
+document.getElementById("niveis").innerHTML = [
+  cartaoNivel("Nível 1 — raiz (reta 1)", dados, ["c", "s", "t"],
+    "<b>É segunda?</b> vence com folga. Repare em <b>É terça?</b>: ganho <b>zero</b> aqui — sozinha ela não ajuda, mas vai ser decisiva depois."),
+  cartaoNivel("Nível 2 — ramo \"não é segunda\" (reta 2)", naoSeg, ["c", "t"],
+    "<b>Empate!</b> As duas perguntas têm o mesmo ganho. Qualquer uma leva a uma árvore pura no final; escolhemos <b>É cientista?</b> (mesma ordem do quadrante). O scikit-learn desempata de forma aleatória, por isso fixamos o <code>random_state</code> no notebook."),
+  cartaoNivel("Nível 3 — ramo \"não é segunda\" e \"não é cientista\" (reta 3)", naoSeg.filter(d => !d.c), ["t"],
+    "Ganho = 1: a pergunta elimina toda a mistura que restava. Todas as folhas ficam puras."),
+].join("");
+
+const ferSim = dados2.filter(d => d.f), ferNao = dados2.filter(d => !d.f);
+document.getElementById("niveis2").innerHTML =
+  cartaoNivel("Nova raiz — com a variável feriado", dados2, ["f", "c", "s", "t"]) +
+  `<div class="card">
+    <h3>Como fica cada ramo de "É feriado?"</h3>
+    <div class="row">
+      <div class="regra"><b>Ramo Sim — é feriado</b>
+        <p><span class="grupo">${pontosDe(ferSim)}</span></p>
+        ${conta(ferSim)} · H = <b>${fmt(entropia(ferSim))}</b><br>
+        Grupo <b>puro</b>: vira a folha <span class="tag h">Não</span> direto.</div>
+      <div class="regra"><b>Ramo Não — não é feriado</b>
+        <p><span class="grupo">${pontosDe(ferNao)}</span></p>
+        ${conta(ferNao)} · H = <b>${fmt(entropia(ferNao))}</b><br>
+        São os <b>6 casos do exemplo base</b>: daqui para baixo, a árvore cresce igual à de antes.</div>
+    </div>
+  </div>`;
+desenharArvore(document.getElementById("arvore-v2"), ARV_V2);
+
+// ---- Classificador (árvore final, começa em branco e vai aparecendo)
+const sf = document.getElementById("arvore-final");
+// mesma ordem das perguntas na árvore
+const PERGUNTAS = [["f", "É feriado?"], ["s", "É segunda?"], ["c", "É cientista?"], ["t", "É terça?"]];
+const resp = {};
+document.getElementById("perguntas").innerHTML = PERGUNTAS.map(([f, txt], i) =>
+  `<div class="pergunta" data-f="${f}"><span><b class="num">${i + 1}</b>${txt}</span><div class="btns" data-f="${f}">
+     <button data-v="1">Sim</button><button data-v="0">Não</button></div></div>`).join("");
+
+function atualizar() {
+  const r = percorrer(ARV_V2, resp);
+  const atual = r.proximo ? ARV_V2.nos[r.proximo].f : null;
+  document.querySelectorAll("#perguntas .pergunta").forEach(p => {
+    const f = p.dataset.f, respondida = resp[f] != null;
+    p.classList.toggle("atual", f === atual);
+    p.classList.toggle("inativa", !respondida && f !== atual);
+    p.querySelectorAll("button").forEach(b => {
+      b.classList.toggle("on", resp[f] === +b.dataset.v);
+      b.disabled = !respondida && f !== atual;
+    });
+  });
+  // mostra o caminho percorrido e os dois ramos de cada pergunta já respondida
+  const mostrar = new Set(r.cam);
+  r.cam.forEach(id => {
+    const n = ARV_V2.nos[id];
+    if (!n.folha && id !== r.proximo) { mostrar.add(n.sim); mostrar.add(n.nao); }
+  });
+  desenharArvore(sf, ARV_V2, { caminho: r.cam, proximo: r.proximo || null, mostrar });
+  document.getElementById("resultado").innerHTML = r.folha
+    ? `Presencial? ${tag(r.folha)}`
+    : `<small>A árvore está perguntando: <b>${ARV_V2.nos[r.proximo].txt}</b></small>`;
+}
+document.getElementById("perguntas").addEventListener("click", e => {
+  const box = e.target.closest(".btns");
+  if (!box || e.target.dataset.v == null || e.target.disabled) return;
+  const f = box.dataset.f;
+  resp[f] = +e.target.dataset.v;
+  // mudar uma resposta apaga as respostas das perguntas seguintes
+  PERGUNTAS.slice(PERGUNTAS.findIndex(([g]) => g === f) + 1).forEach(([g]) => delete resp[g]);
+  atualizar();
+});
+document.getElementById("reset").onclick = () => { for (const k in resp) delete resp[k]; atualizar(); };
+atualizar();
+
+
+})();
+</script>
+<script>
+// ===== Exemplo 2 — Regressão
+(() => {
+
+// [data, temperatura máxima (°C), fim de semana (0/1), chuva (mm), consumo (litros)] — 365 dias de 2015
+// no CSV o consumo vem como 25.461: o ponto é separador de milhar, ou seja, 25.461 litros
+const DADOS = [["2015-01-01",32.5,0,0.0,25461],["2015-01-02",33.5,0,0.0,28972],["2015-01-03",29.9,1,0.0,30814],["2015-01-04",28.6,1,1.2,29799],["2015-01-05",28.3,0,0.0,28900],["2015-01-06",30.5,0,12.2,28218],["2015-01-07",33.7,0,0.0,29732],["2015-01-08",32.8,0,48.6,28397],["2015-01-09",34.0,0,4.4,24886],["2015-01-10",34.2,1,0.0,37937],["2015-01-11",34.8,1,3.4,36254],["2015-01-12",35.4,0,0.0,25743],["2015-01-13",34.8,0,0.8,26990],["2015-01-14",34.0,0,1.6,31825],["2015-01-15",32.8,0,3.0,25724],["2015-01-16",32.7,0,2.0,29938],["2015-01-17",35.8,1,0.0,37690],["2015-01-18",35.6,1,0.0,30524],["2015-01-19",36.5,0,3.7,29265],["2015-01-20",35.6,0,0.6,35127],["2015-01-21",30.9,0,0.0,29130],["2015-01-22",26.1,0,31.0,25795],["2015-01-23",26.1,0,3.6,21784],["2015-01-24",29.4,1,13.0,28348],["2015-01-25",30.0,1,0.0,31088],["2015-01-26",28.7,0,20.8,21520],["2015-01-27",28.7,0,1.2,29972],["2015-01-28",29.9,0,4.9,22603],["2015-01-29",29.2,0,0.0,22696],["2015-01-30",26.9,0,0.0,26845],["2015-01-31",24.3,1,0.2,27030],["2015-02-01",28.0,1,0.0,32057],["2015-02-02",26.5,0,4.5,24097],["2015-02-03",31.1,0,1.6,31655],["2015-02-04",23.7,0,3.2,24738],["2015-02-05",22.9,0,5.6,19950],["2015-02-06",25.4,0,18.4,22821],["2015-02-07",28.7,1,16.7,28893],["2015-02-08",29.5,1,10.4,29926],["2015-02-09",30.7,0,0.0,24062],["2015-02-10",29.0,0,32.2,21137],["2015-02-11",30.4,0,2.2,26805],["2015-02-12",32.7,0,0.0,26389],["2015-02-13",32.1,0,0.0,24219],["2015-02-14",31.6,1,0.0,30231],["2015-02-15",27.6,1,17.4,24968],["2015-02-16",27.3,0,22.7,25343],["2015-02-17",28.0,0,85.3,17399],["2015-02-18",26.4,0,13.4,21392],["2015-02-19",28.5,0,2.4,22922],["2015-02-20",28.2,0,0.0,24567],["2015-02-21",31.1,1,0.0,30943],["2015-02-22",30.8,1,0.0,30825],["2015-02-23",31.4,0,0.0,25692],["2015-02-24",31.9,0,0.0,26959],["2015-02-25",29.3,0,2.0,25366],["2015-02-26",30.3,0,34.4,22784],["2015-02-27",31.4,0,0.6,26241],["2015-02-28",27.7,1,0.0,26467],["2015-03-01",26.3,1,3.0,27475],["2015-03-02",29.2,0,0.0,28749],["2015-03-03",29.5,0,0.0,24146],["2015-03-04",30.5,0,0.0,22988],["2015-03-05",31.6,0,0.0,30300],["2015-03-06",28.5,0,0.0,22654],["2015-03-07",26.6,1,38.2,29090],["2015-03-08",24.4,1,69.2,24619],["2015-03-09",23.3,0,77.0,20016],["2015-03-10",26.9,0,9.7,23042],["2015-03-11",28.1,0,9.5,22933],["2015-03-12",26.9,0,1.2,22409],["2015-03-13",26.6,0,0.0,21281],["2015-03-14",27.9,1,12.2,28844],["2015-03-15",26.8,1,0.3,32872],["2015-03-16",29.4,0,22.4,20903],["2015-03-17",25.6,0,24.2,26275],["2015-03-18",24.1,0,0.0,20167],["2015-03-19",27.1,0,3.2,23628],["2015-03-20",28.2,0,7.4,24213],["2015-03-21",25.3,1,14.7,28631],["2015-03-22",22.8,1,1.7,25855],["2015-03-23",23.3,0,19.2,21406],["2015-03-24",26.3,0,0.0,21617],["2015-03-25",27.9,0,0.0,22401],["2015-03-26",29.8,0,0.0,27989],["2015-03-27",30.8,0,0.0,24974],["2015-03-28",29.5,1,0.0,29760],["2015-03-29",26.6,1,0.0,26116],["2015-03-30",25.9,0,18.6,25850],["2015-03-31",29.0,0,1.0,24925],["2015-04-01",27.5,0,0.0,21979],["2015-04-02",26.2,0,0.0,22116],["2015-04-03",27.2,0,0.0,24867],["2015-04-04",29.4,1,0.0,33450],["2015-04-05",26.4,1,0.0,32713],["2015-04-06",27.7,0,0.0,22356],["2015-04-07",20.0,0,7.1,21004],["2015-04-08",24.3,0,0.4,23362],["2015-04-09",25.6,0,0.0,20298],["2015-04-10",25.5,0,0.0,24862],["2015-04-11",28.4,1,0.0,30505],["2015-04-12",25.7,1,0.0,25070],["2015-04-13",25.7,0,0.0,22620],["2015-04-14",28.8,0,0.0,22001],["2015-04-15",27.4,0,0.0,23469],["2015-04-16",26.7,0,25.4,21735],["2015-04-17",27.0,0,37.2,21593],["2015-04-18",29.3,1,0.0,33822],["2015-04-19",27.2,1,0.0,28028],["2015-04-20",29.2,0,20.2,24304],["2015-04-21",29.0,0,0.0,31108],["2015-04-22",21.6,0,2.4,19113],["2015-04-23",24.9,0,14.6,23198],["2015-04-24",28.1,0,0.0,24388],["2015-04-25",23.3,1,0.0,27420],["2015-04-26",23.7,1,0.8,30479],["2015-04-27",24.9,0,0.0,21838],["2015-04-28",26.9,0,0.0,20812],["2015-04-29",22.7,0,0.0,19761],["2015-04-30",18.7,0,0.0,20452],["2015-05-01",22.0,0,0.0,17939],["2015-05-02",26.4,1,0.0,25272],["2015-05-03",26.3,1,0.0,28049],["2015-05-04",22.3,0,1.0,25317],["2015-05-05",20.8,0,9.9,21826],["2015-05-06",20.4,0,0.0,20680],["2015-05-07",21.7,0,0.0,19143],["2015-05-08",19.2,0,0.0,18146],["2015-05-09",26.1,1,0.0,25489],["2015-05-10",21.0,1,0.0,23537],["2015-05-11",20.6,0,22.2,16956],["2015-05-12",21.7,0,0.0,19052],["2015-05-13",18.9,0,2.8,17287],["2015-05-14",21.0,0,0.0,20300],["2015-05-15",21.5,0,0.0,20538],["2015-05-16",22.3,1,0.0,23702],["2015-05-17",22.4,1,0.0,28411],["2015-05-18",21.3,0,0.0,21073],["2015-05-19",22.9,0,0.0,24215],["2015-05-20",23.3,0,0.2,19525],["2015-05-21",25.0,0,0.0,20786],["2015-05-22",25.4,0,0.0,20429],["2015-05-23",24.4,1,0.0,27250],["2015-05-24",26.3,1,0.0,31387],["2015-05-25",27.4,0,0.0,26075],["2015-05-26",24.8,0,0.0,22162],["2015-05-27",27.1,0,0.0,24258],["2015-05-28",23.2,0,1.8,24683],["2015-05-29",21.9,0,7.2,21245],["2015-05-30",22.9,1,0.0,25937],["2015-05-31",18.4,1,5.6,26081],["2015-06-01",18.0,0,2.2,16228],["2015-06-02",17.5,0,0.5,20106],["2015-06-03",21.7,0,0.0,21055],["2015-06-04",24.1,0,0.0,22772],["2015-06-05",25.3,0,0.0,25142],["2015-06-06",26.1,1,0.0,31129],["2015-06-07",26.2,1,0.0,30498],["2015-06-08",26.4,0,0.0,26150],["2015-06-09",26.0,0,0.0,21327],["2015-06-10",26.2,0,0.0,22008],["2015-06-11",26.9,0,0.0,24615],["2015-06-12",23.5,0,0.0,22375],["2015-06-13",27.4,1,0.0,29607],["2015-06-14",27.3,1,0.0,32983],["2015-06-15",23.4,0,0.0,19119],["2015-06-16",18.1,0,9.0,21029],["2015-06-17",25.1,0,0.0,23898],["2015-06-18",26.2,0,0.0,24534],["2015-06-19",17.7,0,3.8,16748],["2015-06-20",20.4,1,0.0,23055],["2015-06-21",24.6,1,0.0,28857],["2015-06-22",24.6,0,0.0,23022],["2015-06-23",25.5,0,0.0,27146],["2015-06-24",18.0,0,3.8,17241],["2015-06-25",17.4,0,1.0,19463],["2015-06-26",20.9,0,0.0,21860],["2015-06-27",20.8,1,0.0,24227],["2015-06-28",21.8,1,0.0,27594],["2015-06-29",24.4,0,0.0,24863],["2015-06-30",25.1,0,0.0,20161],["2015-07-01",20.5,0,0.0,20824],["2015-07-02",19.9,0,1.6,19727],["2015-07-03",18.4,0,17.8,14940],["2015-07-04",21.0,1,15.2,24632],["2015-07-05",14.5,1,4.4,21294],["2015-07-06",20.6,0,0.0,18448],["2015-07-07",20.2,0,0.0,21237],["2015-07-08",18.7,0,4.5,19849],["2015-07-09",20.4,0,0.0,20740],["2015-07-10",25.4,0,0.0,25698],["2015-07-11",19.8,1,0.0,26691],["2015-07-12",27.4,1,3.0,33298],["2015-07-13",28.7,0,0.0,25640],["2015-07-14",29.3,0,0.0,23937],["2015-07-15",27.6,0,0.0,28742],["2015-07-16",25.8,0,0.0,21748],["2015-07-17",24.3,0,0.0,22032],["2015-07-18",23.8,1,0.0,24827],["2015-07-19",25.9,1,0.0,32473],["2015-07-20",25.1,0,0.0,20620],["2015-07-21",21.4,0,0.0,21825],["2015-07-22",16.1,0,0.0,14343],["2015-07-23",20.6,0,0.0,19029],["2015-07-24",25.8,0,0.0,21104],["2015-07-25",17.9,1,16.6,20738],["2015-07-26",22.9,1,2.0,25233],["2015-07-27",24.2,0,0.0,18975],["2015-07-28",24.5,0,0.0,19640],["2015-07-29",23.8,0,0.0,22522],["2015-07-30",26.7,0,0.0,24227],["2015-07-31",26.6,0,0.0,24726],["2015-08-01",26.4,1,0.0,32467],["2015-08-02",26.3,1,0.0,31663],["2015-08-03",26.9,0,0.0,25867],["2015-08-04",27.4,0,0.0,27724],["2015-08-05",27.2,0,0.0,22039],["2015-08-06",27.7,0,0.0,26127],["2015-08-07",28.9,0,0.0,26580],["2015-08-08",27.8,1,0.0,31310],["2015-08-09",26.2,1,0.0,33517],["2015-08-10",28.0,0,0.0,23181],["2015-08-11",27.2,0,0.0,24183],["2015-08-12",26.6,0,0.0,24594],["2015-08-13",28.1,0,0.0,22610],["2015-08-14",27.6,0,0.0,25479],["2015-08-15",27.8,1,0.0,29621],["2015-08-16",27.2,1,0.0,26272],["2015-08-17",28.0,0,0.0,22541],["2015-08-18",26.5,0,0.0,23070],["2015-08-19",28.3,0,0.0,26021],["2015-08-20",19.6,0,0.0,17655],["2015-08-21",22.1,0,1.0,23243],["2015-08-22",26.2,1,0.0,30177],["2015-08-23",30.0,1,0.0,27518],["2015-08-24",20.5,0,0.0,23210],["2015-08-25",20.5,0,2.4,21092],["2015-08-26",24.0,0,0.6,23357],["2015-08-27",19.8,0,2.6,17888],["2015-08-28",22.1,0,25.0,22217],["2015-08-29",26.7,1,0.0,31681],["2015-08-30",32.0,1,0.0,31833],["2015-08-31",32.2,0,0.0,28441],["2015-09-01",30.7,0,0.0,22389],["2015-09-02",20.2,0,0.4,20681],["2015-09-03",25.0,0,0.0,24222],["2015-09-04",19.3,0,0.0,19345],["2015-09-05",18.5,1,2.4,21827],["2015-09-06",19.9,1,0.0,23566],["2015-09-07",24.4,0,0.1,20227],["2015-09-08",19.2,0,23.6,17075],["2015-09-09",22.9,0,58.0,16977],["2015-09-10",25.6,0,0.0,21525],["2015-09-11",21.8,0,31.8,21454],["2015-09-12",15.6,1,27.6,21814],["2015-09-13",16.1,1,0.0,21252],["2015-09-14",22.5,0,0.2,20464],["2015-09-15",30.1,0,0.0,30775],["2015-09-16",32.6,0,0.0,25343],["2015-09-17",33.0,0,0.0,33930],["2015-09-18",34.5,0,0.0,26311],["2015-09-19",35.5,1,0.0,31836],["2015-09-20",33.3,1,0.0,34695],["2015-09-21",32.8,0,0.0,29829],["2015-09-22",33.3,0,0.0,26362],["2015-09-23",34.0,0,0.0,32589],["2015-09-24",35.3,0,0.0,30345],["2015-09-25",30.3,0,0.0,29411],["2015-09-26",24.9,1,28.6,29637],["2015-09-27",30.6,1,1.8,32184],["2015-09-28",23.6,0,27.2,17731],["2015-09-29",27.1,0,0.0,24114],["2015-09-30",27.6,0,0.0,28034],["2015-10-01",26.4,0,7.6,22664],["2015-10-02",32.7,0,0.0,27488],["2015-10-03",25.0,1,25.0,24876],["2015-10-04",21.3,1,0.2,24862],["2015-10-05",22.4,0,0.0,24679],["2015-10-06",24.7,0,0.0,22304],["2015-10-07",32.6,0,0.0,30329],["2015-10-08",34.0,0,0.0,33182],["2015-10-09",29.0,0,0.0,23849],["2015-10-10",28.0,1,0.3,33330],["2015-10-11",30.0,1,0.0,34496],["2015-10-12",29.6,0,0.0,26249],["2015-10-13",27.6,0,2.4,26523],["2015-10-14",28.5,0,0.0,26793],["2015-10-15",35.8,0,0.0,35861],["2015-10-16",35.7,0,0.0,27387],["2015-10-17",29.2,1,0.0,32666],["2015-10-18",19.2,1,0.1,22199],["2015-10-19",27.2,0,0.0,24000],["2015-10-20",35.3,0,0.0,27871],["2015-10-21",32.0,0,0.0,31139],["2015-10-22",22.8,0,14.6,23065],["2015-10-23",27.3,0,13.4,26594],["2015-10-24",21.2,1,0.0,27657],["2015-10-25",19.2,1,0.0,26594],["2015-10-26",28.5,0,28.4,28084],["2015-10-27",28.4,0,0.1,27582],["2015-10-28",23.9,0,0.0,24862],["2015-10-29",24.8,0,0.0,22634],["2015-10-30",31.2,0,0.0,31649],["2015-10-31",29.3,1,0.0,35781],["2015-11-01",22.4,1,27.2,24429],["2015-11-02",27.2,0,39.6,20648],["2015-11-03",25.6,0,3.4,22741],["2015-11-04",27.4,0,6.8,21479],["2015-11-05",24.8,0,39.3,23134],["2015-11-06",22.8,0,0.0,20575],["2015-11-07",20.0,1,1.2,24330],["2015-11-08",23.9,1,0.6,28610],["2015-11-09",29.5,0,4.4,28456],["2015-11-10",31.8,0,10.4,27964],["2015-11-11",32.7,0,0.0,29569],["2015-11-12",31.8,0,0.0,29267],["2015-11-13",29.6,0,0.0,28647],["2015-11-14",30.4,1,16.4,26836],["2015-11-15",29.7,1,8.0,29386],["2015-11-16",24.9,0,0.0,24609],["2015-11-17",29.7,0,0.0,26964],["2015-11-18",30.5,0,14.1,23614],["2015-11-19",30.4,0,0.0,22960],["2015-11-20",27.0,0,6.8,20332],["2015-11-21",24.4,1,7.2,30392],["2015-11-22",28.8,1,0.0,31933],["2015-11-23",23.6,0,13.6,21662],["2015-11-24",22.6,0,7.0,21689],["2015-11-25",24.8,0,0.4,25119],["2015-11-26",27.4,0,0.0,25285],["2015-11-27",28.4,0,0.0,28979],["2015-11-28",29.8,1,0.0,34382],["2015-11-29",26.0,1,17.4,30617],["2015-11-30",23.3,0,23.4,20238],["2015-12-01",25.8,0,0.0,24529],["2015-12-02",29.4,0,0.0,30471],["2015-12-03",26.1,0,0.0,28405],["2015-12-04",29.1,0,0.0,29513],["2015-12-05",30.6,1,0.1,32451],["2015-12-06",28.0,1,0.1,32780],["2015-12-07",23.9,0,47.8,23375],["2015-12-08",28.0,0,0.0,27713],["2015-12-09",27.9,0,0.0,27137],["2015-12-10",27.7,0,0.0,22933],["2015-12-11",30.3,0,0.0,30740],["2015-12-12",30.8,1,0.0,29579],["2015-12-13",31.0,1,12.2,29188],["2015-12-14",32.5,0,2.0,28131],["2015-12-15",32.8,0,4.0,28617],["2015-12-16",24.8,0,1.5,21062],["2015-12-17",28.7,0,0.0,24337],["2015-12-18",33.5,0,0.1,27042],["2015-12-19",31.3,1,1.3,32536],["2015-12-20",29.0,1,8.4,30127],["2015-12-21",29.1,0,27.2,24834],["2015-12-22",32.4,0,43.0,26828],["2015-12-23",32.4,0,3.0,26468],["2015-12-24",31.5,0,3.4,31572],["2015-12-25",31.0,0,39.0,26308],["2015-12-26",29.8,1,94.8,21955],["2015-12-27",28.2,1,13.6,32307],["2015-12-28",26.7,0,0.0,26095],["2015-12-29",24.1,0,10.3,22309],["2015-12-30",22.4,0,6.3,20467],["2015-12-31",29.0,0,0.0,22446]];
+
+const NS = "http://www.w3.org/2000/svg";
+const COR = { 1: "#F28C28", 0: "#0B2545" };
+const D = DADOS.map(([data, t, w, c, y]) => ({ data, t, w, c, y }));
+
+const f1 = x => x.toFixed(1).replace(".", ",");
+const f2 = x => x.toFixed(2).replace(".", ",");
+// litros e MSE (litros²) com separador de milhar: 25401.4 -> "25.401"
+const Q = x => Math.round(x).toLocaleString("pt-BR");
+const litros = x => `${Q(x)} L`;
+const el = (tagName, attrs, parent, txt) => {
+  const e = document.createElementNS(NS, tagName);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (txt != null) e.textContent = txt;
+  parent && parent.appendChild(e);
+  return e;
+};
+
+// ---- Cálculos: MSE, cortes e redução
+const media = g => g.reduce((s, d) => s + d.y, 0) / g.length;
+const mse = g => { if (!g.length) return 0; const m = media(g); return g.reduce((s, d) => s + (d.y - m) ** 2, 0) / g.length; };
+function dividir(g, f, lim) {
+  const nao = g.filter(d => d[f] <= lim), sim = g.filter(d => d[f] > lim);
+  return { f, lim, nao, sim, red: mse(g) - (nao.length * mse(nao) + sim.length * mse(sim)) / g.length };
+}
+// testa todos os limiares: ponto médio entre dois valores vizinhos
+function cortes(g, f) {
+  const v = [...new Set(g.map(d => d[f]))].sort((a, b) => a - b);
+  return v.slice(1).map((b, i) => dividir(g, f, (v[i] + b) / 2));
+}
+const melhor = (g, f) => cortes(g, f).reduce((a, b) => !a || b.red > a.red + 1e-12 ? b : a, null);
+
+const NOME_F = { t: "Temperatura máxima", w: "Fim de semana", c: "Chuva" };
+const pergunta = (f, lim) => f === "t" ? `Temp. máx > ${f2(lim)} °C?` : f === "w" ? "Fim de semana?" : `Chuva > ${f1(lim)} mm?`;
+const corte = (f, lim) => f === "w" ? "Sim / Não" : f === "t" ? `${f2(lim)} °C` : `${f1(lim)} mm`;
+
+// ---- Árvore construída a partir dos dados (mesmo algoritmo guloso do sklearn, max_depth = 2)
+// "de": passo em que a pergunta aparece; "pendente": passo em que aparece só como média provisória
+function construir(dados, feats, profMax) {
+  const nos = {}; let k = 0;
+  const cresce = (g, d, w) => {
+    const id = "n" + k++, n = { g, media: media(g), n: g.length, de: d, pendente: null };
+    nos[id] = n;
+    const b = d < profMax ? feats.map(f => melhor(g, f)).filter(Boolean).reduce((a, c) => !a || c.red > a.red + 1e-12 ? c : a, null) : null;
+    if (b && b.red > 0) {
+      Object.assign(n, { f: b.f, lim: b.lim, txt: pergunta(b.f, b.lim), de: d + 1, pendente: d });
+      n.nao = cresce(b.nao, d + 1, b.f === "w" ? 0 : w);
+      n.sim = cresce(b.sim, d + 1, b.f === "w" ? 1 : w);
+    } else Object.assign(n, { folha: true, w });
+    return id;
+  };
+  return { raiz: cresce(dados, 0, null), nos };
+}
+const ARV = construir(D, ["t", "w"], 2);
+const ARV2 = construir(D, ["t", "w", "c"], 2);
+
+// Layout: cada nível abre metade da distância do nível de cima, para as folhas não se encostarem
+const NO_Q = 206, NO_F = 136, NO_A = 50, DX = 78, DY = 100, MARGEM = 12;
+const largura = n => n.folha ? NO_F : NO_Q;
+function layout(arv) {
+  const N = arv.nos;
+  const prof = id => N[id].folha ? 0 : 1 + Math.max(prof(N[id].nao), prof(N[id].sim));
+  const P = prof(arv.raiz);
+  const visita = (id, x, d) => {
+    Object.assign(N[id], { x, y: NO_A / 2 + MARGEM + d * DY });
+    if (N[id].folha) return;
+    const dx = DX * 2 ** (P - 1 - d);
+    visita(N[id].nao, x - dx, d + 1);
+    visita(N[id].sim, x + dx, d + 1);
+  };
+  visita(arv.raiz, 0, 0);
+  const nos = Object.values(N);
+  const min = Math.min(...nos.map(n => n.x - largura(n) / 2)) - MARGEM;
+  const max = Math.max(...nos.map(n => n.x + largura(n) / 2)) + MARGEM;
+  nos.forEach(n => n.x -= min);
+  arv.W = max - min;
+  arv.H = NO_A + 2 * MARGEM + P * DY;
+}
+layout(ARV);
+layout(ARV2);
+
+// mostrar: conjunto opcional de nós visíveis (usado pelo estimador para a árvore ir aparecendo)
+function desenharArvore(svg, arv, { passo = 99, caminho = [], proximo = null, mostrar = null } = {}) {
+  svg.innerHTML = "";
+  svg.setAttribute("viewBox", `0 0 ${arv.W} ${arv.H}`);
+  const N = arv.nos;
+  const estado = id => {
+    if (mostrar && !mostrar.has(id)) return null;
+    if (passo >= N[id].de) return "real";
+    return N[id].pendente === passo ? "prov" : null;
+  };
+  for (const a in N) {
+    if (N[a].folha || estado(a) !== "real") continue;
+    [[N[a].nao, "Não"], [N[a].sim, "Sim"]].forEach(([b, l]) => {
+      if (!estado(b)) return;
+      const A = N[a], B = N[b], ativo = caminho.includes(a) && caminho.includes(b);
+      // conector em ângulo reto: desce do pai, vai até a coluna do filho e desce até ele
+      const y1 = A.y + NO_A / 2, y2 = B.y - NO_A / 2, meio = (y1 + y2) / 2;
+      el("path", { d: `M${A.x},${y1} V${meio} H${B.x} V${y2}`, fill: "none", class: "edge" + (ativo ? " ativo" : "") }, svg);
+      el("text", { x: B.x, y: (meio + y2) / 2 + 4, "text-anchor": "middle", class: "lbl" + (ativo ? " ativo" : "") }, svg, l);
+    });
+  }
+  for (const id in N) {
+    const st = estado(id);
+    if (!st) continue;
+    const n = N[id], pilula = st === "prov" || n.folha;
+    const cls = id === proximo ? " proximo" : caminho.includes(id) ? " ativo" : "";
+    const g = el("g", { class: "node" + cls }, svg);
+    g.classList.add(st === "prov" ? "prov" : n.folha ? "folha" : "questao");
+    const L = pilula ? NO_F : NO_Q;
+    const corFolha = n.w != null ? n.w : +(n.media > media(D));
+    el("rect", { x: n.x - L / 2, y: n.y - NO_A / 2, width: L, height: NO_A, rx: pilula ? NO_A / 2 : 10,
+                 fill: n.folha && st === "real" ? COR[corFolha] : "#FFFFFF" }, g);
+    const corTexto = st === "prov" ? null : n.folha ? (corFolha ? "#000000" : "#FFFFFF") : "#000000";
+    if (pilula) {
+      const t1 = el("text", { x: n.x, y: n.y + 1, "text-anchor": "middle", "font-weight": 800, "font-size": 17 }, g, `≈ ${litros(n.media)}`);
+      const t2 = el("text", { x: n.x, y: n.y + 17, "text-anchor": "middle", "font-size": 11.5 }, g, `${n.n} dias`);
+      if (corTexto) t1.style.fill = t2.style.fill = corTexto;
+    } else {
+      el("text", { x: n.x, y: n.y + 6, "text-anchor": "middle", "font-weight": 700, "font-size": 16 }, g, n.txt).style.fill = corTexto;
+    }
+  }
+}
+
+// Percorre a árvore com as respostas dadas; para na primeira pergunta sem resposta
+function percorrer(arv, resp) {
+  const cam = [arv.raiz];
+  let id = arv.raiz;
+  while (!arv.nos[id].folha) {
+    const n = arv.nos[id], v = resp[n.f];
+    if (v == null) return { cam, proximo: id };
+    id = v > n.lim ? n.sim : n.nao;
+    cam.push(id);
+  }
+  return { cam, folha: arv.nos[id] };
+}
+const prever = (arv, d) => percorrer(arv, d).folha.media;
+const erro = prev => ({
+  mae: D.reduce((s, d) => s + Math.abs(prev(d) - d.y), 0) / D.length,
+  rmse: Math.sqrt(D.reduce((s, d) => s + (prev(d) - d.y) ** 2, 0) / D.length),
+});
+
+// "Faixa": o consumo de cada dia do grupo numa linha (14 a 39 L), a média e a faixa média ± √MSE
+const FX = y => 8 + (y - 13000) / 26000 * 304;
+function faixa(g) {
+  const m = media(g), s = Math.sqrt(mse(g));
+  const pts = g.map((d, i) => `<circle cx="${FX(d.y).toFixed(1)}" cy="${(24 + ((i * 37) % 13 - 6) * 1.5).toFixed(1)}" r="2.6" fill="${COR[d.w]}" opacity=".85" style="stroke: var(--folha-borda); stroke-width: .5"/>`).join("");
+  return `<svg class="faixa" viewBox="0 0 320 60" role="img" aria-label="Distribuição do consumo do grupo">
+    <rect x="${FX(m - s)}" y="8" width="${FX(m + s) - FX(m - s)}" height="32" rx="6" fill="rgba(242,140,40,.18)"/>
+    ${pts}
+    <line x1="${FX(m)}" x2="${FX(m)}" y1="4" y2="44" stroke-width="3" style="stroke:var(--linha)"/>
+    ${[15, 20, 25, 30, 35].map(v => `<text x="${FX(v * 1000)}" y="57" text-anchor="middle" font-size="10" opacity=".7">${v} mil L</text>`).join("")}
+  </svg>`;
+}
+const resumo = g => `${g.length} ${g.length === 1 ? "dia" : "dias"}${g.length < D.length ? ` de ${D.length}` : ""} · média <b>${litros(media(g))}</b> · MSE <b>${Q(mse(g))}</b>`;
+const caixa = (titulo, g, extra = "") => `<div class="regra"><b>${titulo}</b>${faixa(g)}${resumo(g)}${extra}</div>`;
+
+// ---- Dados: indicadores e primeira semana
+const mediaGeral = media(D), erroMedia = erro(() => mediaGeral);
+const ys = D.map(d => d.y);
+document.getElementById("r-kpis").innerHTML = [
+  ["Dias", `${D.length}`, "ano de 2015"],
+  ["Consumo médio", `${Q(mediaGeral)} <small>L</small>`, "palpite sem árvore"],
+  ["Mínimo / máximo", `${Q(Math.min(...ys))} – ${Q(Math.max(...ys))} <small>L</small>`, "por dia"],
+  ["Erro do palpite", `± ${Q(erroMedia.mae)} <small>L</small>`, "erro médio prevendo sempre a média"],
+].map(([t, v, s], i) => `<div class="regra${i === 3 ? " destaque" : ""}"><b>${t}</b><div class="kpi">${v}</div><small>${s}</small></div>`).join("");
+const dataBR = s => s.split("-").reverse().join("/");
+document.querySelector("#r-tabela tbody").innerHTML = D.slice(0, 7).map(d =>
+  `<tr><td>${dataBR(d.data)}</td><td>${f1(d.t)} °C</td><td><span class="tag ${d.w ? "p" : "h"}">${d.w ? "Sim" : "Não"}</span></td>
+   <td>${f1(d.c)} mm</td><td><b>${litros(d.y)}</b></td></tr>`).join("");
+
+// ---- Dispersão com os cortes
+const sv = document.getElementById("r-dispersao");
+const X0 = 68, Y0 = 12, W = 436, H = 300, TX = [14, 37], TY = [13000, 39000];
+const px = t => X0 + (t - TX[0]) / (TX[1] - TX[0]) * W;
+const py = y => Y0 + H - (y - TY[0]) / (TY[1] - TY[0]) * H;
+[15, 20, 25, 30, 35].forEach(v => {
+  el("line", { x1: X0, x2: X0 + W, y1: py(v * 1000), y2: py(v * 1000), class: "grade" }, sv);
+  el("text", { x: X0 - 8, y: py(v * 1000) + 4, "text-anchor": "end", class: "eixo" }, sv, `${v} mil`);
+  el("text", { x: px(v), y: Y0 + H + 18, "text-anchor": "middle", class: "eixo" }, sv, v);
+});
+el("text", { x: X0 + W / 2, y: Y0 + H + 40, "text-anchor": "middle", "font-weight": 600, "font-size": 14 }, sv, "Temperatura máxima (°C)");
+el("text", { x: 14, y: Y0 + H / 2, "text-anchor": "middle", "font-weight": 600, "font-size": 14,
+             transform: `rotate(-90 14 ${Y0 + H / 2})` }, sv, "Consumo (litros)");
+D.forEach(d => el("circle", { cx: px(d.t), cy: py(d.y), r: 3.6, fill: COR[d.w], opacity: .85,
+                               style: "stroke: var(--linha); stroke-width: .4" }, sv));
+
+// linhas de cada passo, derivadas da árvore
+const camadas = [0, 1, 2].map(() => el("g", {}, sv));
+const nivel = (g, y, x1, x2, cor, rotulo, alinhar = "start") => {
+  // contorno branco só no tema escuro, para a linha azul não sumir no fundo preto
+  el("line", { x1: px(x1), x2: px(x2), y1: py(y), y2: py(y), "stroke-width": 7, "stroke-linecap": "round",
+               style: "stroke: var(--folha-borda)" }, g);
+  el("line", { x1: px(x1), x2: px(x2), y1: py(y), y2: py(y), "stroke-width": 4, "stroke-linecap": "round",
+               style: `stroke:${cor}` }, g);
+  el("text", { x: alinhar === "start" ? px(x1) + 6 : px(x2) - 6, y: py(y) - 8, "text-anchor": alinhar, class: "halo" }, g, rotulo);
+};
+const R = ARV.nos[ARV.raiz], lados = [[R.nao, TX[0], R.lim], [R.sim, R.lim, TX[1]]];
+nivel(camadas[0], R.media, TX[0], TX[1], "var(--linha)", `média geral ≈ ${litros(R.media)}`);
+el("line", { x1: px(R.lim), x2: px(R.lim), y1: Y0, y2: Y0 + H, "stroke-width": 2.5, "stroke-dasharray": "8 6", id: "r-corte" }, sv);
+el("text", { x: px(R.lim) + 6, y: Y0 + 14, class: "halo", id: "r-corte-txt" }, sv, `${f2(R.lim)} °C`);
+lados.forEach(([id, a, b], i) => nivel(camadas[1], ARV.nos[id].media, a, b, "var(--linha)", `≈ ${litros(ARV.nos[id].media)}`, i ? "end" : "start"));
+lados.forEach(([id, a, b], i) => {
+  const n = ARV.nos[id];
+  [n.nao, n.sim].forEach(f => nivel(camadas[2], ARV.nos[f].media, a, b, COR[ARV.nos[f].w], `≈ ${litros(ARV.nos[f].media)}`, i ? "end" : "start"));
+});
+
+const N1 = ARV.nos[R.nao], N2 = ARV.nos[R.sim];
+const textoPasso = [
+  `Sem nenhuma pergunta, a previsão é uma linha só: a média geral de ${litros(R.media)}. Repare como os pontos se espalham longe dela.`,
+  `1º corte — temperatura máxima acima de ${f2(R.lim)} °C? Do lado frio a média cai para ${litros(N1.media)}; do lado quente sobe para ${litros(N2.media)}.`,
+  `2º corte — é fim de semana? Dentro de cada lado, o fim de semana (laranja) consome uns 4 a 5 mil litros a mais que o dia útil (azul). São 4 degraus = 4 folhas.`,
+];
+const sp = document.getElementById("r-arvore-passo");
+function mostrarPasso(n) {
+  camadas.forEach((g, i) => g.style.display = i === n ? "" : "none");
+  document.getElementById("r-corte").style.stroke = n === 0 ? "none" : n === 1 ? "#F28C28" : "var(--linha)";
+  document.getElementById("r-corte-txt").style.display = n === 0 ? "none" : "";
+  document.querySelectorAll("#r-passos button").forEach(b => b.classList.toggle("on", +b.dataset.p === n));
+  document.getElementById("r-legenda-passo").textContent = textoPasso[n];
+  desenharArvore(sp, ARV, { passo: n });
+}
+document.getElementById("r-passos").addEventListener("click", e => {
+  if (e.target.dataset.p != null) mostrarPasso(+e.target.dataset.p);
+});
+mostrarPasso(0);
+
+// ---- Exemplo passo a passo (MSE da raiz e redução de cada pergunta)
+const F = (...l) => `<div class="formula">${l.join("<br>")}</div>`;
+const fds = dividir(D, "w", 0.5), tmp = melhor(D, "t"), nCortes = cortes(D, "t").length;
+const alto = D.reduce((a, d) => d.y > a.y ? d : a), baixo = D.reduce((a, d) => d.y < a.y ? d : a);
+const ponderado = s => (s.nao.length * mse(s.nao) + s.sim.length * mse(s.sim)) / D.length;
+const PASSOS = [
+  { fase: "MSE da raiz", t: "1. Sem perguntas, a previsão é a média",
+    c: `<p>Todos os ${D.length} dias juntos no nó raiz. A linha preta é a média; a faixa laranja mostra o espalhamento típico (± √MSE).</p>
+        <div class="row"><div class="regra"><b>Raiz</b>${faixa(D)}${resumo(D)}</div></div>` },
+  { fase: "MSE da raiz", t: "2. Quanto essa previsão erra?",
+    c: `<p>Para cada dia, calculamos o erro (consumo − média) e elevamos ao quadrado. Dois exemplos:</p>
+        ${F(`Dia de maior consumo: (${Q(alto.y)} − ${Q(R.media)})² = ${Q((alto.y - R.media) ** 2)}`,
+            `Dia de menor consumo: (${Q(baixo.y)} − ${Q(R.media)})² = ${Q((baixo.y - R.media) ** 2)}`)}
+        <p>O <b>MSE</b> é a média desses ${D.length} quadrados:</p>
+        ${F(`MSE(raiz) = <span class='res'>${Q(mse(D))}</span>`)}
+        <p>A unidade do MSE é <b>litros²</b>, por isso o número é tão grande. A raiz quadrada volta para litros:
+        √${Q(mse(D))} ≈ <b>${litros(Math.sqrt(mse(D)))}</b> — o tamanho típico do erro.</p>` },
+  { fase: "Pergunta \"Fim de semana?\"", t: "3. Separamos os dias pela pergunta",
+    c: `<p>Cada dia vai para um ramo. Repare como cada grupo fica <b>menos espalhado</b> que a raiz:</p>
+        <div class="row">${caixa("Não — dia útil", fds.nao)}${caixa("Sim — fim de semana", fds.sim)}</div>` },
+  { fase: "Pergunta \"Fim de semana?\"", t: "4. MSE ponderado e redução",
+    c: `<p>Cada ramo pesa de acordo com quantos dias ele tem.</p>
+        ${F(`MSE(filhos) = (${fds.nao.length}/${D.length}) × ${Q(mse(fds.nao))} + (${fds.sim.length}/${D.length}) × ${Q(mse(fds.sim))} = ${Q(ponderado(fds))}`,
+            `Redução = ${Q(mse(D))} − ${Q(ponderado(fds))} = <span class='res'>${Q(fds.red)}</span>`)}` },
+  { fase: "Pergunta \"Temperatura > limiar?\"", t: "5. Variável numérica: onde cortar?",
+    c: `<p>A temperatura não é Sim/Não. A árvore testa <b>todos os limiares possíveis</b> — o ponto médio entre dois valores
+        vizinhos de temperatura. Aqui são <b>${nCortes} candidatos</b>.</p>
+        <p>Para cada candidato ela faz exatamente as contas dos passos 3 e 4 e guarda a redução.
+        (Teste no cartão "Teste você", logo abaixo.)</p>
+        <p class="nota" style="margin-top:0">O melhor corte é <b>${f2(tmp.lim)} °C</b>.</p>` },
+  { fase: "Pergunta \"Temperatura > limiar?\"", t: `6. Separando em ${f2(tmp.lim)} °C`,
+    c: `<div class="row">${caixa(`Não — até ${f2(tmp.lim)} °C`, tmp.nao)}${caixa(`Sim — acima de ${f2(tmp.lim)} °C`, tmp.sim)}</div>` },
+  { fase: "Pergunta \"Temperatura > limiar?\"", t: "7. MSE ponderado e redução",
+    c: F(`MSE(filhos) = (${tmp.nao.length}/${D.length}) × ${Q(mse(tmp.nao))} + (${tmp.sim.length}/${D.length}) × ${Q(mse(tmp.sim))} = ${Q(ponderado(tmp))}`,
+         `Redução = ${Q(mse(D))} − ${Q(ponderado(tmp))} = <span class='res'>${Q(tmp.red)}</span>`) },
+  { fase: "Decisão", t: "8. Qual pergunta vira a raiz?",
+    c: `${F(`Temperatura > ${f2(tmp.lim)} °C: redução ${Q(tmp.red)}`, `Fim de semana: redução ${Q(fds.red)}`)}
+        <p class="nota" style="margin-top:0">Maior redução → <b>a temperatura vira a raiz</b>. Depois, a árvore repete tudo dentro de
+        cada lado — e lá o fim de semana vence.</p>` },
+];
+let passoAtual = 0;
+const trilha = document.getElementById("r-trilha");
+trilha.innerHTML = PASSOS.map((_, i) => `<i data-i="${i}" title="Passo ${i + 1}"></i>`).join("");
+function mostrarCalculo(i) {
+  passoAtual = Math.max(0, Math.min(PASSOS.length - 1, i));
+  const p = PASSOS[passoAtual];
+  document.getElementById("r-passo-corpo").innerHTML =
+    `<div class="fase" style="margin-top:14px">${p.fase} · passo ${passoAtual + 1} de ${PASSOS.length}</div><h4>${p.t}</h4>${p.c}`;
+  trilha.querySelectorAll("i").forEach((b, k) => b.className = k < passoAtual ? "feito" : k === passoAtual ? "atual" : "");
+  document.getElementById("r-passo-ant").disabled = passoAtual === 0;
+  document.getElementById("r-passo-prox").disabled = passoAtual === PASSOS.length - 1;
+}
+document.getElementById("r-passo-ant").onclick = () => mostrarCalculo(passoAtual - 1);
+document.getElementById("r-passo-prox").onclick = () => mostrarCalculo(passoAtual + 1);
+document.getElementById("r-passo-reset").onclick = () => mostrarCalculo(0);
+trilha.onclick = e => { if (e.target.dataset.i != null) mostrarCalculo(+e.target.dataset.i); };
+mostrarCalculo(0);
+
+// ---- Teste você: curva de redução por limiar
+const CORTES_T = cortes(D, "t"), iMelhor = CORTES_T.indexOf(tmp);
+const cv = document.getElementById("r-curva");
+const CX0 = 68, CY0 = 10, CW = 436, CH = 160, maxRed = tmp.red * 1.15;
+const cx = t => CX0 + (t - TX[0]) / (TX[1] - TX[0]) * CW;
+const cy = r => CY0 + CH - Math.max(0, r) / maxRed * CH;
+[0, 2, 4, 6].forEach(v => {
+  el("line", { x1: CX0, x2: CX0 + CW, y1: cy(v * 1e6), y2: cy(v * 1e6), class: "grade" }, cv);
+  el("text", { x: CX0 - 8, y: cy(v * 1e6) + 4, "text-anchor": "end", class: "eixo" }, cv, v ? `${v} mi` : "0");
+});
+[15, 20, 25, 30, 35].forEach(v => el("text", { x: cx(v), y: CY0 + CH + 18, "text-anchor": "middle", class: "eixo" }, cv, `${v} °C`));
+el("text", { x: 12, y: CY0 + CH / 2, "text-anchor": "middle", "font-size": 12, "font-weight": 600,
+             transform: `rotate(-90 12 ${CY0 + CH / 2})` }, cv, "Redução (L²)");
+el("path", { d: CORTES_T.map((s, i) => `${i ? "L" : "M"}${cx(s.lim).toFixed(1)},${cy(s.red).toFixed(1)}`).join(""),
+             fill: "none", "stroke-width": 2.5, style: "stroke: var(--linha)" }, cv);
+el("line", { x1: cx(tmp.lim), x2: cx(tmp.lim), y1: CY0, y2: CY0 + CH, "stroke-width": 2, "stroke-dasharray": "6 5", stroke: "#F28C28" }, cv);
+el("circle", { cx: cx(tmp.lim), cy: cy(tmp.red), r: 6, fill: "#F28C28", style: "stroke: var(--linha)" }, cv);
+el("text", { x: cx(tmp.lim) + 10, y: cy(tmp.red) + 4, class: "halo" }, cv, `melhor: ${f2(tmp.lim)} °C`);
+const marca = el("line", { y1: CY0, y2: CY0 + CH, "stroke-width": 2, style: "stroke: var(--linha)" }, cv);
+const ponto = el("circle", { r: 6, fill: "#0B2545", style: "stroke: var(--linha); stroke-width: 2" }, cv);
+
+const sl = document.getElementById("r-limiar");
+Object.assign(sl, { min: 0, max: CORTES_T.length - 1, step: 1, value: Math.round(CORTES_T.length * 0.15) });
+function atualizarLimiar() {
+  const s = CORTES_T[+sl.value];
+  marca.setAttribute("x1", cx(s.lim)); marca.setAttribute("x2", cx(s.lim));
+  ponto.setAttribute("cx", cx(s.lim)); ponto.setAttribute("cy", cy(s.red));
+  document.getElementById("r-limiar-out").textContent = `${f2(s.lim)} °C`;
+  document.getElementById("r-limiar-lados").innerHTML =
+    caixa(`Até ${f2(s.lim)} °C`, s.nao) + caixa(`Acima de ${f2(s.lim)} °C`, s.sim) +
+    `<div class="regra${+sl.value === iMelhor ? " destaque" : ""}"><b>Redução do MSE</b><div class="kpi">${Q(s.red)}</div>
+       <small>${+sl.value === iMelhor ? "Este é o melhor corte!" : `o melhor corte dá ${Q(tmp.red)}`}</small></div>`;
+}
+sl.oninput = atualizarLimiar;
+document.getElementById("r-ir-melhor").onclick = () => { sl.value = iMelhor; atualizarLimiar(); };
+atualizarLimiar();
+
+// ---- Tabelas de redução por nível
+function cartaoNivel(titulo, grupo, feats, nota) {
+  const linhas = feats.map(f => melhor(grupo, f)).filter(Boolean).sort((a, b) => b.red - a.red);
+  return `<div class="card">
+    <h3>${titulo}</h3>
+    <p style="margin:0 0 12px">${resumo(grupo)}</p>
+    <div class="wrap"><table>
+      <thead><tr><th>Variável</th><th>Melhor corte</th><th>Ramo Não</th><th>Ramo Sim</th><th>Redução</th></tr></thead>
+      <tbody>${linhas.map((l, i) => `<tr class="${i === 0 ? "best" : ""}">
+        <td>${NOME_F[l.f]}</td><td>${corte(l.f, l.lim)}</td>
+        <td>${l.nao.length} dias<small>média ${litros(media(l.nao))}</small></td>
+        <td>${l.sim.length} dias<small>média ${litros(media(l.sim))}</small></td>
+        <td>${Q(l.red)}</td></tr>`).join("")}</tbody>
+    </table></div>
+    ${nota ? `<p class="nota">${nota}</p>` : ""}
+  </div>`;
+}
+const frio = N1.g, quente = N2.g;
+document.getElementById("r-niveis").innerHTML = [
+  cartaoNivel("Nível 1 — raiz (1º corte)", D, ["t", "w"],
+    "A <b>temperatura</b> vence. Repare que o fim de semana também reduz bastante o erro — ele vai aparecer no próximo nível."),
+  cartaoNivel(`Nível 2 — lado frio (até ${f2(R.lim)} °C)`, frio, ["t", "w"]),
+  cartaoNivel(`Nível 2 — lado quente (acima de ${f2(R.lim)} °C)`, quente, ["t", "w"],
+    "Nos dois lados, <b>fim de semana</b> vence. A árvore para aqui (profundidade 2): são 4 folhas, cada uma prevendo a média do seu grupo."),
+].join("");
+
+// ---- Chuva
+const ch = melhor(D, "c");
+document.getElementById("r-chuva-efeito").innerHTML = `
+  <h3>A chuva tem efeito? Melhor corte: ${f1(ch.lim)} mm</h3>
+  <div class="row">${caixa(`Até ${f1(ch.lim)} mm`, ch.nao)}${caixa(`Acima de ${f1(ch.lim)} mm`, ch.sim)}</div>
+  <p style="margin:12px 0 0">Sim: dias com chuva consomem em média <b>${litros(media(ch.nao) - media(ch.sim))} a menos</b>.
+    A redução do MSE é <b>${Q(ch.red)}</b> — positiva, mas bem menor que a da temperatura (${Q(tmp.red)}).</p>`;
+document.getElementById("r-barras").innerHTML = [["Raiz", D], ["Lado frio", frio], ["Lado quente", quente]].map(([t, g]) => {
+  const ls = ["t", "w", "c"].map(f => melhor(g, f)).sort((a, b) => b.red - a.red);
+  return `<div><h3 style="font-size:.95rem">${t}</h3><div class="barras">${ls.map((l, i) =>
+    `<span>${NOME_F[l.f]}</span><div class="barra${i === 0 ? " best" : ""}" style="width:${(l.red / tmp.red * 100).toFixed(1)}%"></div><b>${Q(l.red)}</b>`).join("")}</div></div>`;
+}).join("");
+desenharArvore(document.getElementById("r-arvore-v2"), ARV2);
+document.querySelector("#r-erros tbody").innerHTML = [
+  ["Só a média", erroMedia], ["Árvore", erro(d => prever(ARV, d))], ["Árvore com chuva", erro(d => prever(ARV2, d))],
+].map(([t, e], i) => `<tr class="${i ? "" : ""}"><td>${t}</td><td>${litros(e.mae)}</td><td>${litros(e.rmse)}</td></tr>`).join("");
+
+// ---- Estimador (começa em branco e a árvore vai aparecendo)
+const sf = document.getElementById("r-arvore-final");
+const PERGUNTAS = ["t", "w"];
+const resp = {};
+const tIn = document.getElementById("r-temp-in"), tOut = document.getElementById("r-temp-out");
+const maeArvore = erro(d => prever(ARV, d)).mae;
+function atualizar() {
+  tOut.textContent = `${f1(+tIn.value)} °C`;
+  const r = percorrer(ARV, resp);
+  const atual = r.proximo ? ARV.nos[r.proximo].f : null;
+  document.querySelectorAll("#r-perguntas .pergunta").forEach(p => {
+    const f = p.dataset.f, respondida = resp[f] != null;
+    p.classList.toggle("atual", f === atual);
+    p.classList.toggle("inativa", !respondida && f !== atual);
+    p.querySelectorAll(".btns button").forEach(b => {
+      b.classList.toggle("on", resp[f] === +b.dataset.v);
+      b.disabled = !respondida && f !== atual;
+    });
+  });
+  document.getElementById("r-temp-ok").style.display = resp.t == null ? "" : "none";
+  // mostra o caminho percorrido e os dois ramos de cada pergunta já respondida
+  const mostrar = new Set(r.cam);
+  r.cam.forEach(id => {
+    const n = ARV.nos[id];
+    if (!n.folha && id !== r.proximo) { mostrar.add(n.sim); mostrar.add(n.nao); }
+  });
+  desenharArvore(sf, ARV, { caminho: r.cam, proximo: r.proximo || null, mostrar });
+  document.getElementById("r-resultado").innerHTML = r.folha
+    ? `Consumo estimado: <span class="res">≈ ${litros(r.folha.media)}</span>
+       <small>Média de ${r.folha.n} dias parecidos em 2015 · a árvore erra em média ± ${litros(maeArvore)}</small>`
+    : `<small>A árvore está perguntando: <b>${ARV.nos[r.proximo].txt}</b></small>`;
+}
+document.getElementById("r-temp-ok").onclick = () => { resp.t = +tIn.value; atualizar(); };
+// depois de respondida, a temperatura atualiza a árvore ao vivo
+tIn.oninput = () => { if (resp.t != null) resp.t = +tIn.value; atualizar(); };
+document.getElementById("r-perguntas").addEventListener("click", e => {
+  const box = e.target.closest(".btns");
+  if (!box || e.target.dataset.v == null || e.target.disabled) return;
+  resp[box.dataset.f] = +e.target.dataset.v;
+  atualizar();
+});
+document.getElementById("r-reset").onclick = () => {
+  PERGUNTAS.forEach(f => delete resp[f]);
+  tIn.value = 26;
+  atualizar();
+};
+atualizar();
+
+
+})();
+</script>
+<script>
+// ---- Navegação: destaca a seção visível
+const links = document.querySelectorAll("nav a");
+const obs = new IntersectionObserver(entradas => entradas.forEach(e => {
+  if (e.isIntersecting) links.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id));
+}), { rootMargin: "-40% 0px -55% 0px" });
+document.querySelectorAll("section").forEach(s => obs.observe(s));
+// no fim da página a última seção pode não cruzar a faixa observada
+addEventListener("scroll", () => {
+  if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4)
+    links.forEach((a, i) => a.classList.toggle("on", i === links.length - 1));
+});
+// com 12 links a barra rola na horizontal: mantém o link ativo à vista
+const barra = document.querySelector("nav .in");
+new MutationObserver(() => {
+  const ativo = barra.querySelector("a.on");
+  if (ativo) barra.scrollTo({ left: ativo.offsetLeft - barra.offsetLeft - 80 });
+}).observe(barra, { subtree: true, attributeFilter: ["class"] });
+</script>
+<script>
+// ---- Apresentação: progresso, navegação entre seções (botões e setas) e entrada suave
+(() => {
+  const paradas = [...document.querySelectorAll("main .parte, main section[id]")];
+  const rot = document.getElementById("sec-rot");
+  const ant = document.getElementById("sec-ant"), prox = document.getElementById("sec-prox");
+  const prog = document.querySelector(".progresso i");
+  const reduz = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const nomeDe = el => {
+    if (el.classList.contains("parte")) return el.querySelector("h2").textContent.trim();
+    const a = document.querySelector(`nav a[href="#${el.id}"]`);
+    return (el.closest(".parte-reg") ? "Regressão · " : "Classificação · ") + (a ? a.textContent.trim() : el.id);
+  };
+  const atual = () => {
+    if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) return paradas.length - 1;
+    const lim = innerHeight * 0.35; let i = -1;
+    paradas.forEach((p, k) => { if (p.getBoundingClientRect().top <= lim) i = k; });
+    return i;
+  };
+  let pend = false;
+  function atualizar() {
+    pend = false;
+    const h = document.documentElement.scrollHeight - innerHeight;
+    prog.style.transform = `scaleX(${h > 0 ? Math.min(1, scrollY / h) : 0})`;
+    const i = atual();
+    rot.innerHTML = i < 0 ? "Capa"
+      : `<b>${String(i + 1).padStart(2, "0")}</b> / ${paradas.length}<span class="nome"> · ${nomeDe(paradas[i])}</span>`;
+    ant.disabled = i < 0;
+    prox.disabled = i >= paradas.length - 1;
+  }
+  const agendar = () => { if (!pend) { pend = true; requestAnimationFrame(atualizar); } };
+  addEventListener("scroll", agendar, { passive: true });
+  addEventListener("resize", agendar);
+  const ir = d => {
+    const alvo = atual() + d, behavior = reduz ? "auto" : "smooth";
+    if (alvo < 0) scrollTo({ top: 0, behavior });
+    else if (alvo < paradas.length) paradas[alvo].scrollIntoView({ behavior, block: "start" });
+  };
+  ant.onclick = () => ir(-1);
+  prox.onclick = () => ir(1);
+  addEventListener("keydown", e => {
+    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    if (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]")) return;
+    if (e.key === "ArrowRight") { e.preventDefault(); ir(1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); ir(-1); }
+  });
+  atualizar();
+
+  if (!reduz && "IntersectionObserver" in window) {
+    document.documentElement.classList.add("anima");
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add("visivel"); io.unobserve(e.target); }
+    }), { rootMargin: "0px 0px -8% 0px", threshold: 0.01 });
+    paradas.forEach(p => io.observe(p));
+  }
+})();
+</script>
+</body>
+</html>
