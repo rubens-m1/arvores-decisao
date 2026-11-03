@@ -5,178 +5,190 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Árvores de Decisão</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --preto: #000000; --branco: #FFFFFF; --laranja: #F28C28; --azul: #0B2545;
     --bg: var(--branco); --fg: var(--preto); --linha: var(--preto); --card: var(--branco);
-    --borda: rgba(11, 37, 69, .14);
-    --sombra: 0 1px 2px rgba(11, 37, 69, .05), 0 12px 32px -14px rgba(11, 37, 69, .18);
-    --tint-azul: rgba(11, 37, 69, .045); --tint-laranja: rgba(242, 140, 40, .12);
-    --nav-bg: rgba(255, 255, 255, .9); --no-borda: var(--azul); --folha-borda: transparent;
-    --suave: rgba(11, 37, 69, .72);
-    --lado: 276px;
+    --borda: rgba(11, 37, 69, .16); --borda-forte: rgba(11, 37, 69, .32); --sombra: 0 1px 2px rgba(11, 37, 69, .06);
+    --tint-azul: rgba(11, 37, 69, .05); --tint-laranja: rgba(242, 140, 40, .12);
+    --nav-bg: rgba(255, 255, 255, .94); --no-borda: var(--azul); --folha-borda: transparent;
+    --ponto: var(--azul); --suave: rgba(11, 37, 69, .68); --foco: var(--laranja);
+    --titulo: "Bricolage Grotesque", Inter, system-ui, sans-serif;
+    --raio: 14px; --raio-p: 10px;
+    --nav-h: 52px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: var(--preto); --fg: var(--branco); --linha: var(--branco); --card: var(--preto);
-      --borda: rgba(255, 255, 255, .2); --sombra: none;
+      --borda: rgba(255, 255, 255, .22); --borda-forte: rgba(255, 255, 255, .4); --sombra: none;
       --tint-azul: rgba(255, 255, 255, .06); --tint-laranja: rgba(242, 140, 40, .16);
       --nav-bg: rgba(0, 0, 0, .9); --no-borda: var(--branco); --folha-borda: var(--branco);
-      --suave: rgba(255, 255, 255, .7);
+      --ponto: var(--branco); --suave: rgba(255, 255, 255, .72);
     }
   }
   :root[data-theme="dark"] {
     --bg: var(--preto); --fg: var(--branco); --linha: var(--branco); --card: var(--preto);
-    --borda: rgba(255, 255, 255, .2); --sombra: none;
+    --borda: rgba(255, 255, 255, .22); --borda-forte: rgba(255, 255, 255, .4); --sombra: none;
     --tint-azul: rgba(255, 255, 255, .06); --tint-laranja: rgba(242, 140, 40, .16);
     --nav-bg: rgba(0, 0, 0, .9); --no-borda: var(--branco); --folha-borda: var(--branco);
-    --suave: rgba(255, 255, 255, .7);
+    --ponto: var(--branco); --suave: rgba(255, 255, 255, .72);
   }
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
-  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-h) + 20px); -webkit-text-size-adjust: 100%; }
   body {
     margin: 0; background: var(--bg); color: var(--fg);
-    font: 17px/1.65 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    font: 17px/1.6 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     font-feature-settings: "cv11", "ss01";
   }
-  b, strong { font-weight: 700; }
-  code { font: 500 .88em/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: var(--tint-azul);
-         border: 1px solid var(--borda); border-radius: 6px; padding: 2px 6px; }
-  ::selection { background: var(--laranja); color: var(--preto); }
-  :focus-visible { outline: 3px solid var(--laranja); outline-offset: 2px; }
+  code { font-size: .88em; background: var(--tint-azul); padding: 1px 6px; border-radius: 6px; }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--foco); outline-offset: 3px; border-radius: 6px; }
 
-  /* ---------- Barra de progresso ---------- */
-  .progresso { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 40; pointer-events: none; }
+  /* ---------- Progresso de leitura e voltar ao topo ---------- */
+  .progresso { position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 30; pointer-events: none; }
   .progresso i { display: block; height: 100%; background: var(--laranja); transform-origin: 0 50%; transform: scaleX(0); }
+  .topo { position: fixed; right: 16px; bottom: 16px; z-index: 20; width: 48px; height: 48px; border-radius: 50%;
+          display: grid; place-items: center; background: var(--azul); color: var(--branco); text-decoration: none;
+          font-size: 1.3rem; font-weight: 800; box-shadow: 0 4px 14px rgba(11, 37, 69, .25), inset 0 0 0 1.5px var(--folha-borda);
+          opacity: 0; transform: translateY(12px); pointer-events: none; transition: opacity .2s, transform .2s; }
+  .topo.visivel { opacity: 1; transform: none; pointer-events: auto; }
+  .topo:hover { background: var(--laranja); color: var(--preto); }
 
   /* ---------- Capa ---------- */
-  .hero { position: relative; overflow: hidden; background: var(--azul); color: var(--branco); border-bottom: 6px solid var(--laranja); }
-  .hero::before { content: ""; position: absolute; inset: 0; pointer-events: none;
-                  background-image: radial-gradient(rgba(255, 255, 255, .1) 1.2px, transparent 1.6px); background-size: 28px 28px;
-                  -webkit-mask-image: linear-gradient(90deg, transparent 10%, #000 75%); mask-image: linear-gradient(90deg, transparent 10%, #000 75%); }
-  .hero .in { position: relative; max-width: 1120px; margin: 0 auto; padding: 96px 32px 88px; min-height: min(88vh, 780px);
-              display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 56px; align-items: center; }
-  .hero small { color: var(--laranja); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: .8rem; }
-  .hero h1 { font-size: clamp(2.6rem, 6.4vw, 4.75rem); line-height: 1.02; letter-spacing: -.035em; margin: 18px 0 22px; font-weight: 800; }
-  .hero p { margin: 0; font-size: clamp(1.05rem, 1.6vw, 1.22rem); max-width: 620px; color: rgba(255, 255, 255, .88); }
-  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 30px; }
-  .chips span { border: 1px solid rgba(255, 255, 255, .55); border-radius: 999px; padding: 6px 14px; font-size: .84rem; font-weight: 600; }
-  .chips span.on { background: var(--laranja); border-color: var(--laranja); color: var(--preto); }
-  .hero-acoes { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; margin-top: 44px; }
-  .cta { display: inline-flex; align-items: center; gap: 10px; background: var(--laranja); color: var(--preto); font-weight: 700;
-         text-decoration: none; padding: 14px 24px; border-radius: 999px; transition: transform .15s, box-shadow .15s; }
-  .cta:hover { transform: translateY(-1px); box-shadow: 0 10px 26px -8px rgba(242, 140, 40, .75); }
-  .cta svg { width: 18px; height: 18px; display: inline-block; }
-  .dica-teclas { font-size: .86rem; color: rgba(255, 255, 255, .75); }
-  kbd { font: 600 .76rem/1 Inter, system-ui, sans-serif; display: inline-grid; place-items: center; min-width: 24px; height: 24px;
-        padding: 0 6px; border-radius: 6px; border: 1px solid currentColor; margin-right: 4px; }
-  svg.hero-arv { max-width: 420px; justify-self: end; overflow: visible; }
-  @media (max-width: 899px) {
-    .hero .in { grid-template-columns: 1fr; min-height: 0; padding: 64px 16px 56px; }
-    svg.hero-arv { display: none; }
-  }
+  .hero { background: var(--azul); color: var(--branco); padding: 48px 16px 44px; border-bottom: 4px solid var(--laranja);
+          box-shadow: inset 0 0 0 1px var(--folha-borda); }
+  .hero .in { max-width: 1180px; margin: 0 auto; }
+  .hero h1 { font-family: var(--titulo); font-size: clamp(2.2rem, 4.5vw, 3.1rem); line-height: 1.05; letter-spacing: -.02em;
+             margin: 0 0 12px; font-weight: 800; }
+  .hero p { margin: 0; font-size: 1.08rem; max-width: 40em; opacity: .85; }
+  .hero-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+  .hero-links a { text-decoration: none; font-size: .92rem; font-weight: 600; padding: 9px 18px; border-radius: 999px;
+                  border: 1.5px solid rgba(255, 255, 255, .5); transition: background .15s, border-color .15s, color .15s; }
+  .hero-links a:hover { background: var(--laranja); border-color: var(--laranja); color: var(--preto); }
 
-  /* ---------- Navegação ---------- */
-  nav { position: sticky; top: 0; z-index: 20; background: var(--nav-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  /* ---------- Estrutura: barra lateral no desktop, barra no topo no resto ---------- */
+  .shell { position: relative; }
+  nav { position: sticky; top: 0; z-index: 10; background: var(--nav-bg); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
         border-bottom: 1px solid var(--borda); }
-  nav .marca, nav .dica { display: none; }
-  nav .in { max-width: 1120px; margin: 0 auto; padding: 0 16px; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+  nav .in { max-width: 1180px; margin: 0 auto; padding: 0 16px; display: flex; align-items: stretch; gap: 2px; overflow-x: auto;
+            scrollbar-width: none; counter-reset: secao;
+            -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 40px), transparent);
+                    mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 40px), transparent); }
   nav .in::-webkit-scrollbar { display: none; }
-  nav a { color: var(--fg); text-decoration: none; font-size: .88rem; font-weight: 600; padding: 15px 11px; white-space: nowrap;
-          border-bottom: 3px solid transparent; opacity: .68; counter-increment: item; transition: opacity .15s, background .15s; }
-  nav a::before { content: counter(item, decimal-leading-zero); font-size: .72rem; font-variant-numeric: tabular-nums; margin-right: 7px; opacity: .6; }
+  nav a { counter-increment: secao; color: var(--fg); text-decoration: none; font-size: .9rem; font-weight: 600;
+          min-height: var(--nav-h); padding: 0 12px; white-space: nowrap; display: flex; align-items: center; gap: 7px;
+          border-bottom: 3px solid transparent; opacity: .72; transition: opacity .15s, color .15s; }
+  nav a::before { content: counter(secao); font-size: .75rem; font-weight: 700; width: 20px; height: 20px; border-radius: 50%;
+                  display: inline-grid; place-items: center; flex: none; border: 1.5px solid var(--borda-forte); }
   nav a:hover { opacity: 1; }
   nav a.on { opacity: 1; border-bottom-color: var(--laranja); }
-  nav a.on::before { color: var(--laranja); opacity: 1; }
-  nav .rot { flex: none; align-self: center; font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
-             color: var(--laranja); padding: 0 4px 0 14px; counter-reset: item; }
+  nav a.on::before { background: var(--laranja); border-color: var(--laranja); color: var(--preto); }
+  nav a:has(~ a.on) { opacity: .9; }
+  nav a:has(~ a.on)::before { background: var(--azul); border-color: var(--azul); color: var(--branco); box-shadow: inset 0 0 0 1px var(--folha-borda); }
+  nav .rot { counter-reset: secao; flex: none; align-self: center; font-size: .78rem; font-weight: 800; color: var(--laranja);
+             padding: 0 6px 0 18px; }
   nav .rot:first-child { padding-left: 0; }
 
-  @media (min-width: 1180px) {
-    html { scroll-padding-top: 28px; }
-    body { padding-left: var(--lado); }
-    nav { position: fixed; top: 0; left: 0; bottom: 0; width: var(--lado); overflow-y: auto; border-bottom: 0;
-          border-right: 1px solid var(--borda); background: var(--bg); backdrop-filter: none; -webkit-backdrop-filter: none;
-          display: flex; flex-direction: column; padding: 32px 0 24px; }
-    nav .marca { display: block; padding: 0 28px 26px; margin-bottom: 6px; border-bottom: 1px solid var(--borda); }
-    nav .marca small { display: block; color: var(--laranja); font-size: .7rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
-    nav .marca b { display: block; font-size: 1.2rem; line-height: 1.2; letter-spacing: -.02em; margin-top: 6px; }
-    nav .marca span { display: block; font-size: .82rem; color: var(--suave); margin-top: 4px; }
-    nav .in { flex-direction: column; overflow: visible; padding: 0 14px; max-width: none; margin: 0; gap: 1px; }
-    nav a { padding: 8px 14px; border-bottom: 0; border-radius: 10px; display: flex; align-items: center; }
-    nav a:hover { background: var(--tint-azul); }
-    nav a.on { background: var(--tint-laranja); }
-    nav .rot { align-self: stretch; padding: 22px 14px 8px; }
-    nav .rot:first-child { padding-left: 14px; }
-    nav .dica { display: block; margin-top: auto; padding: 24px 28px 0; font-size: .78rem; color: var(--suave); }
+  main { max-width: 1040px; margin: 0 auto; padding: 8px 16px 96px; }
+
+  @media (min-width: 1200px) {
+    html { scroll-padding-top: 24px; }
+    .hero .in { max-width: 1380px; padding: 0 24px; }
+    .shell { display: grid; grid-template-columns: 252px minmax(0, 1fr); max-width: 1380px; margin: 0 auto; gap: 8px; }
+    nav { top: 0; align-self: start; height: 100vh; overflow-y: auto; border-bottom: 0; border-right: 1px solid var(--borda);
+          background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 28px 0 40px; }
+    nav .in { flex-direction: column; overflow: visible; padding: 0 16px 0 24px; gap: 0; -webkit-mask-image: none; mask-image: none; }
+    nav .rot { align-self: stretch; padding: 22px 0 8px; font-size: .95rem; font-family: var(--titulo); color: var(--fg); }
+    nav .rot:first-child { padding-top: 0; }
+    nav a { position: relative; min-height: 40px; padding: 0 8px 0 0; border: 0; gap: 12px; white-space: normal; line-height: 1.25; }
+    nav a::before { width: 24px; height: 24px; background: var(--bg); position: relative; z-index: 1; }
+    /* o tronco: uma linha vertical ligando os nós, como os galhos das árvores da página */
+    nav a::after { content: ""; position: absolute; left: 11px; top: 0; bottom: 0; border-left: 2px solid var(--borda); }
+    nav .rot + a::after { top: 50%; }
+    nav a:has(+ .rot)::after, nav a:last-child::after { bottom: 50%; }
+    nav a:has(~ a.on)::after { border-left-color: var(--azul); }
+    nav a.on { color: var(--fg); }
+    nav a.on > * , nav a.on { font-weight: 700; }
+    main { margin: 0; padding: 8px 40px 96px 32px; max-width: 1080px; }
+    .progresso { display: none; }
   }
 
-  /* ---------- Layout ---------- */
-  main { max-width: 1120px; margin: 0 auto; padding: 8px 32px 96px; }
-  @media (max-width: 640px) { main { padding: 8px 16px 88px; } }
-  section { padding-top: 104px; }
-  .parte + .parte-cla > section:first-child, .parte + .parte-reg > section:first-child { padding-top: 72px; }
-  .parte-cla > section::before, .parte-reg > section::before {
-    display: block; font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--suave);
-    padding-bottom: 14px; margin-bottom: 26px; border-bottom: 1px solid var(--borda);
-    background: linear-gradient(var(--laranja), var(--laranja)) left bottom / 56px 2px no-repeat;
-  }
-  .parte-cla > section::before { content: "Exemplo 1 · Classificação"; }
-  .parte-reg > section::before { content: "Exemplo 2 · Regressão"; }
-  h2 { display: flex; align-items: center; gap: 16px; font-size: clamp(1.65rem, 3.2vw, 2.35rem); line-height: 1.15;
-       letter-spacing: -.025em; font-weight: 800; margin: 0 0 14px; }
-  h2 .n { flex: none; width: 46px; height: 46px; border-radius: 50%; background: var(--laranja); color: var(--preto);
+  /* ---------- Divisória das partes ---------- */
+  section { padding-top: 56px; }
+  .parte { margin: 80px 0 0; padding: 32px 32px 30px; border-radius: 22px; background: var(--azul); color: var(--branco);
+           box-shadow: inset 0 0 0 1px var(--folha-borda); position: relative; overflow: hidden; }
+  .parte:first-child { margin-top: 40px; }
+  .parte small { color: var(--laranja); font-weight: 700; font-size: .95rem; }
+  .parte h2 { margin: 6px 0 6px; font-size: clamp(1.7rem, 4vw, 2.5rem); line-height: 1.1; letter-spacing: -.02em; }
+  .parte p { margin: 0; opacity: .9; }
+
+  /* ---------- Títulos e texto ---------- */
+  h2 { display: flex; align-items: center; gap: 14px; font-family: var(--titulo); font-size: clamp(1.5rem, 3vw, 1.85rem);
+       letter-spacing: -.015em; line-height: 1.15; font-weight: 800; margin: 0 0 10px; }
+  h2 .n { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--laranja); color: var(--preto);
           display: grid; place-items: center; font-size: 1.1rem; letter-spacing: 0; }
-  .lead { margin: 0 0 28px; font-size: 1.1rem; line-height: 1.7; color: var(--fg); opacity: .84; max-width: 780px; }
-  h3 { font-size: 1.04rem; letter-spacing: -.01em; margin: 0 0 12px; font-weight: 700; }
-  .card { background: var(--card); border: 1px solid var(--borda); border-radius: 18px; padding: 24px; box-shadow: var(--sombra); min-width: 0; }
-  @media (max-width: 640px) { .card { padding: 18px; border-radius: 16px; } }
-  .stack > * + * { margin-top: 18px; }
-  .row { display: flex; gap: 18px; flex-wrap: wrap; }
+  .lead { margin: 0 0 22px; color: var(--fg); opacity: .86; max-width: 42em; }
+  h3 { font-size: 1.05rem; margin: 0 0 12px; font-weight: 700; line-height: 1.3; }
+  p { max-width: 46em; }
+
+  /* ---------- Cartões e blocos ---------- */
+  .card { background: var(--card); border: 1px solid var(--borda); border-radius: var(--raio); padding: 20px; box-shadow: var(--sombra); min-width: 0; }
+  .card.lab { border-color: var(--borda-forte); border-top: 4px solid var(--laranja); }
+  .stack > * + * { margin-top: 16px; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; }
   .row > * { flex: 1 1 320px; min-width: 0; }
-  .regras { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin: 0 0 22px; }
-  .regra { border-radius: 14px; padding: 18px; border: 1px solid var(--borda); background: var(--tint-azul); min-width: 0; }
-  .regra > b:first-child { display: block; font-size: 1.02rem; margin-bottom: 4px; }
+  .regras { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 0 0 18px; }
+  .regra { border-radius: var(--raio-p); padding: 16px; border: 1px solid var(--borda); background: var(--tint-azul); min-width: 0; }
+  .regra > b:first-child { display: block; font-size: 1rem; margin-bottom: 4px; }
   .regra.destaque { background: var(--tint-laranja); border-color: var(--laranja); }
-  .kpi { font-size: 1.75rem; font-weight: 800; line-height: 1.2; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin: 4px 0 2px; }
-  .kpi small { font-size: .9rem; font-weight: 600; opacity: .75; letter-spacing: 0; }
+  .regra small { color: var(--suave); }
+  .kpi { font-family: var(--titulo); font-size: 1.8rem; font-weight: 800; line-height: 1.15; letter-spacing: -.01em;
+         font-variant-numeric: tabular-nums; }
+  .kpi small { font-family: Inter, system-ui, sans-serif; font-size: .9rem; font-weight: 600; }
 
   /* ---------- Tags, pontos, tabelas ---------- */
-  .tag { display: inline-block; min-width: 46px; text-align: center; padding: 2px 12px; border-radius: 999px; font-weight: 700; font-size: .84rem; }
+  .tag { display: inline-block; min-width: 46px; text-align: center; padding: 2px 12px; border-radius: 999px; font-weight: 700; font-size: .85rem; }
   .p { background: var(--laranja); color: var(--preto); }
   .h { background: var(--azul); color: var(--branco); box-shadow: inset 0 0 0 1px var(--linha); }
-  .wrap { overflow-x: auto; border-radius: 14px; border: 1px solid var(--borda); background: var(--card); }
+  .wrap { overflow-x: auto; border-radius: var(--raio-p); border: 1px solid var(--borda); background: var(--card); }
   table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-  th, td { padding: 12px 16px; text-align: center; border-bottom: 1px solid var(--borda); }
+  th, td { padding: 10px 14px; text-align: center; border-bottom: 1px solid var(--borda); }
   tbody tr:last-child td { border-bottom: 0; }
-  tbody tr:not(.best):hover td { background: var(--tint-azul); }
-  th { background: var(--azul); color: var(--branco); font-weight: 600; font-size: .86rem; letter-spacing: .01em; }
-  tr.best td { font-weight: 700; background: var(--tint-laranja); }
+  tbody tr:nth-child(even) td { background: var(--tint-azul); }
+  th { background: var(--azul); color: var(--branco); font-weight: 600; font-size: .88rem; line-height: 1.3; }
+  tr.best td, tbody tr.best:nth-child(even) td { font-weight: 700; background: var(--tint-laranja); }
   tr.best td:first-child { box-shadow: inset 5px 0 0 var(--laranja); }
-  #r-erros td, #r-erros th { white-space: nowrap; padding: 10px; }
+  #r-minfolha td, #r-minfolha th, #r-dias28 td, #r-dias28 th { white-space: nowrap; padding: 10px; }
   td small { display: block; font-weight: 500; opacity: .8; white-space: nowrap; }
 
-  /* ---------- Botões ---------- */
+  /* ---------- Botões e controle segmentado ---------- */
   button {
-    font: inherit; font-weight: 600; font-size: .93rem; cursor: pointer; border-radius: 999px; padding: 9px 18px; min-height: 40px;
-    border: 1.5px solid var(--borda); background: var(--card); color: var(--fg); transition: background .15s, border-color .15s, color .15s;
+    font: inherit; font-weight: 600; font-size: .95rem; cursor: pointer; border-radius: 999px; padding: 8px 18px; min-height: 42px;
+    border: 1.5px solid var(--borda-forte); background: var(--card); color: var(--fg); transition: background .15s, border-color .15s, color .15s;
   }
-  button:hover { border-color: var(--laranja); }
+  button:hover:not(:disabled) { border-color: var(--laranja); }
   button.on, button.prim { background: var(--laranja); color: var(--preto); border-color: var(--laranja); }
+  button.prim:hover:not(:disabled) { background: #f59d45; }
   button:disabled { opacity: .35; cursor: default; }
-  .btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
-  input[type="range"] { accent-color: var(--laranja); width: 100%; }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+  .btns.seg { display: inline-flex; flex-wrap: nowrap; gap: 4px; padding: 4px; border-radius: 999px; background: var(--tint-azul);
+              border: 1px solid var(--borda); max-width: 100%; overflow-x: auto; scrollbar-width: none; margin: 4px 0 14px; }
+  .btns.seg::-webkit-scrollbar { display: none; }
+  .btns.seg button { border-color: transparent; background: transparent; white-space: nowrap; flex: none; }
+  .btns.seg button:hover:not(.on) { background: var(--card); border-color: var(--borda); }
+  .btns.seg button.on { background: var(--laranja); border-color: var(--laranja); }
 
-  /* seletor de passos em formato segmentado */
-  #passos, #r-passos { display: inline-flex; gap: 4px; padding: 5px; margin: 4px 0 18px; border-radius: 999px;
-                       background: var(--tint-azul); border: 1px solid var(--borda); }
-  #passos button, #r-passos button { border-color: transparent; background: transparent; }
-  #passos button:hover:not(.on), #r-passos button:hover:not(.on) { background: var(--card); border-color: var(--borda); }
-  #passos button.on, #r-passos button.on { background: var(--laranja); border-color: var(--laranja); box-shadow: 0 2px 8px -2px rgba(242, 140, 40, .6); }
-  @media (max-width: 720px) { #passos, #r-passos { border-radius: 18px; } }
+  /* ---------- Sliders ---------- */
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 36px; background: transparent; cursor: pointer; margin: 0; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: var(--borda-forte); }
+  input[type="range"]::-moz-range-track { height: 6px; border-radius: 3px; background: var(--borda-forte); }
+  input[type="range"]::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--laranja); }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: -10px; border-radius: 50%;
+    background: var(--laranja); border: 3px solid var(--card); box-shadow: 0 0 0 1.5px var(--no-borda), 0 2px 6px rgba(11, 37, 69, .25); }
+  input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--laranja);
+    border: 3px solid var(--card); box-shadow: 0 0 0 1.5px var(--no-borda); }
+  input[type="range"]:focus-visible { outline-offset: 2px; }
 
   /* ---------- SVG ---------- */
   svg { width: 100%; height: auto; display: block; }
@@ -197,110 +209,135 @@
   .grade { stroke: var(--borda); }
   .halo { paint-order: stroke; stroke: var(--card); stroke-width: 5px; font-weight: 800; font-size: 14px; }
   .faixa { max-width: 360px; }
-  #legenda-passo, #r-legenda-passo { font-size: 1.05rem; min-height: 3.2em; margin: 0 0 18px; max-width: 820px; }
-  .legenda { display: flex; gap: 18px; flex-wrap: wrap; font-size: .88rem; margin-top: 10px; color: var(--suave); }
+  #legenda-passo, #r-legenda-passo { font-size: 1.05rem; min-height: 3.2em; margin: 0 0 16px; padding-left: 14px;
+                                     border-left: 4px solid var(--laranja); max-width: 46em; }
+  .legenda { display: flex; gap: 8px 18px; flex-wrap: wrap; font-size: .88rem; margin-top: 12px; color: var(--suave); }
   .legenda i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px;
                border: 1px solid var(--linha); }
+  .legenda i.linha { width: 20px; height: 4px; border-radius: 2px; border: 0; vertical-align: 3px; }
+  .legenda i.vazado { background: transparent; border-width: 1.5px; }
+  .legenda i.tracejada { background: repeating-linear-gradient(90deg, var(--linha) 0 6px, transparent 6px 10px); }
+  #r-prof-disp { max-width: 680px; margin: 0 auto; }
+  #curva-h-simples, #curva-h { max-width: 680px; margin: 0 auto; }
+  /* a árvore vazia do passo 0 não precisa ocupar a altura da árvore inteira */
+  #intuicao .row > .card, #r-intuicao .row > .card { display: flex; flex-direction: column; }
+  #intuicao .row > .card > svg.arv, #r-intuicao .row > .card > svg.arv { margin-block: auto; }
+
+  /* ---------- Seção que abre e fecha ---------- */
+  details.aprofundar > summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; list-style: none; min-height: 32px;
+                                 display: flex; align-items: center; gap: 12px; border-radius: 8px; }
+  details.aprofundar > summary::-webkit-details-marker { display: none; }
+  details.aprofundar > summary::before { content: "+"; flex: none; width: 28px; height: 28px; border-radius: 50%;
+                                         display: grid; place-items: center; font-weight: 800; background: var(--laranja); color: var(--preto);
+                                         transition: transform .2s; }
+  details.aprofundar > summary:hover::before { transform: scale(1.1); }
+  details.aprofundar > summary::after { content: "Mostrar"; margin-left: auto; font-size: .85rem; font-weight: 600; color: var(--suave); }
+  details.aprofundar[open] > summary::after { content: "Ocultar"; }
+  details.aprofundar[open] > summary::before { content: "−"; }
+  details.aprofundar[open] > summary { margin-bottom: 14px; }
 
   /* ---------- Fórmulas e passo a passo ---------- */
-  .formula { font-family: "Cambria Math", "STIX Two Math", Georgia, serif; font-size: 1.2rem; text-align: center; line-height: 1.8;
-             background: var(--tint-azul); border: 1px solid var(--borda); border-radius: 12px; padding: 14px 16px; margin: 14px 0; overflow-x: auto; }
-  .nota { border: 1px solid rgba(242, 140, 40, .45); border-left: 4px solid var(--laranja); background: var(--tint-laranja);
-          border-radius: 12px; padding: 14px 18px; margin: 18px 0 0; }
+  .formula { font-family: "Cambria Math", "STIX Two Math", Georgia, serif; font-size: 1.2rem; text-align: center; line-height: 1.7;
+             background: var(--tint-azul); border-radius: var(--raio-p); padding: 14px 16px; margin: 12px 0; overflow-x: auto; }
+  .nota { border-left: 5px solid var(--laranja); background: var(--tint-laranja); border-radius: 0 var(--raio-p) var(--raio-p) 0;
+          padding: 12px 16px; margin: 16px 0 0; max-width: none; }
   .passo-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
                 padding-bottom: 14px; border-bottom: 1px solid var(--borda); }
-  .trilha { display: flex; gap: 6px; flex-wrap: wrap; }
-  .trilha i { width: 26px; height: 8px; border-radius: 4px; background: var(--borda); cursor: pointer; transition: background .2s; }
-  .trilha i:hover { background: var(--suave); }
-  .trilha i.feito { background: var(--azul); box-shadow: inset 0 0 0 1px var(--linha); }
-  .trilha i.atual { background: var(--laranja); }
-  .fase { font-size: .76rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--laranja); }
+  .trilha { display: flex; gap: 4px; flex-wrap: wrap; }
+  /* a área clicável tem 24px de altura; a barrinha visível continua fina */
+  .trilha i { width: 26px; height: 24px; cursor: pointer; display: flex; align-items: center; }
+  .trilha i::before { content: ""; width: 100%; height: 8px; border-radius: 4px; background: var(--borda); transition: background .15s, height .15s; }
+  .trilha i:hover::before { height: 12px; }
+  .trilha i.feito::before { background: var(--azul); box-shadow: inset 0 0 0 1px var(--folha-borda); }
+  .trilha i.atual::before { background: var(--laranja); height: 12px; }
+  .fase { font-size: .9rem; font-weight: 700; color: var(--laranja); }
   #passo-corpo, #r-passo-corpo { min-height: 300px; }
-  #passo-corpo h4, #r-passo-corpo h4 { font-size: 1.4rem; letter-spacing: -.02em; margin: 6px 0 10px; }
+  #passo-corpo h4, #r-passo-corpo h4 { font-family: var(--titulo); font-size: 1.45rem; letter-spacing: -.01em; line-height: 1.2; margin: 4px 0 10px; }
   .res { color: var(--laranja); font-weight: 800; }
+  .passo-nav { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 18px 0 0; padding-top: 16px; border-top: 1px solid var(--borda); }
+  .passo-nav > :last-child { order: -1; margin-right: auto; border-color: transparent; background: transparent; padding-inline: 4px;
+                             text-decoration: underline; text-underline-offset: 4px; }
+  .passo-nav > :last-child:hover { color: var(--laranja); }
+  .atalho { font-size: .82rem; color: var(--suave); }
+  .atalho kbd { font: inherit; font-weight: 700; border: 1px solid var(--borda-forte); border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; }
 
   /* ---------- Barras de redução ---------- */
   .barras { display: grid; grid-template-columns: auto 1fr auto; gap: 8px 12px; align-items: center; font-size: .92rem; }
   .barra { height: 16px; border-radius: 8px; background: var(--azul); box-shadow: inset 0 0 0 1px var(--linha); }
   .barra.best { background: var(--laranja); box-shadow: none; }
 
-  /* ---------- Estimador ---------- */
+  /* ---------- Classificador e estimador ---------- */
   .classif > :first-child { flex: 1 1 300px; }
   .classif > :last-child { flex: 2 1 460px; }
-  .pergunta { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; padding: 14px 0;
+  .pergunta { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; padding: 12px 0;
               border-bottom: 1px solid var(--borda); flex-wrap: wrap; transition: opacity .2s; }
   .pergunta .btns { margin: 0; flex-wrap: nowrap; }
+  .pergunta .btns button { min-width: 64px; }
   .pergunta.inativa { opacity: .35; }
   .pergunta.atual > span { font-weight: 700; }
   .pergunta .num { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; margin-right: 10px;
-                   font-size: .8rem; border: 1.5px solid var(--borda); }
+                   font-size: .8rem; border: 1.5px solid var(--borda-forte); }
   .pergunta.atual .num { background: var(--laranja); border-color: var(--laranja); color: var(--preto); }
-  .temp { display: flex; align-items: center; gap: 12px; flex: 1 1 100%; }
-  .temp output { font-weight: 800; min-width: 72px; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+  .temp { display: flex; align-items: center; gap: 14px; flex: 1 1 100%; }
+  .temp output { font-family: var(--titulo); font-size: 1.15rem; font-weight: 800; min-width: 84px; white-space: nowrap; text-align: right;
+                 font-variant-numeric: tabular-nums; }
   #arvore-final, #r-arvore-final { min-height: 120px; }
-  #resultado, #r-resultado { font-size: 1.4rem; font-weight: 800; letter-spacing: -.01em; margin-top: 18px; min-height: 2em; }
-  #r-resultado small { display: block; font-weight: 500; font-size: .95rem; opacity: .8; letter-spacing: 0; }
+  #resultado, #r-resultado { font-family: var(--titulo); font-size: 1.45rem; font-weight: 800; margin-top: 16px; min-height: 2em; letter-spacing: -.01em; }
+  #resultado small, #r-resultado small { font-family: Inter, system-ui, sans-serif; letter-spacing: 0; }
+  #r-resultado small { display: block; font-weight: 500; font-size: .95rem; opacity: .8; }
+  #r-estimar .card { display: grid; gap: 4px; }
+  #r-estimar .res { font-size: 1.15em; }
 
   .parte-reg svg.arv { max-width: 600px; }
-  #resultado small { font-weight: 500; font-size: .95rem; opacity: .8; letter-spacing: 0; }
+  .parte-reg svg.arv.larga { max-width: none; margin-top: 16px; }
+  #r-caminho { font-size: .95rem; color: var(--suave); }
+  #r-caminho b { color: var(--fg); }
+  #resultado small { font-weight: 500; font-size: .95rem; opacity: .8; }
   .dot { display: inline-block; width: 22px; height: 22px; border-radius: 50%; margin: 0 3px; vertical-align: middle; border: 1.5px solid var(--linha); }
   .dot.S { background: var(--laranja); } .dot.N { background: var(--azul); }
-  .grupo { display: inline-flex; align-items: center; gap: 4px; padding: 8px 12px; border-radius: 12px; border: 1px dashed var(--borda); margin: 4px 8px 4px 0; }
+  .grupo { display: inline-flex; align-items: center; gap: 4px; padding: 8px 12px; border-radius: var(--raio-p); border: 1px dashed var(--borda-forte); margin: 4px 8px 4px 0; flex-wrap: wrap; }
   .grupo b { margin-right: 6px; font-size: .9rem; }
   .ramo { margin-bottom: 4px; white-space: nowrap; }
   .ramo .dot { width: 16px; height: 16px; margin: 0 2px; }
-
-  /* ---------- Divisória das partes (capítulos) ---------- */
-  .parte { position: relative; overflow: hidden; isolation: isolate; margin: 128px 0 0; padding: 80px 48px 48px; min-height: 320px;
-           display: flex; flex-direction: column; justify-content: flex-end; border-radius: 24px;
-           background: var(--azul); color: var(--branco); box-shadow: inset 0 0 0 1px var(--folha-borda); }
-  .parte:first-child { margin-top: 56px; }
-  .parte::before { content: attr(data-n); position: absolute; right: 28px; bottom: -40px; z-index: -1; font-size: clamp(150px, 22vw, 270px);
-                   font-weight: 800; line-height: 1; letter-spacing: -.06em; color: transparent; -webkit-text-stroke: 2px rgba(242, 140, 40, .38); }
-  .parte::after { content: ""; position: absolute; left: 48px; top: 0; width: 72px; height: 6px; background: var(--laranja); border-radius: 0 0 4px 4px; }
-  .parte small { color: var(--laranja); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: .8rem; }
-  .parte h2 { display: block; margin: 10px 0 12px; font-size: clamp(1.8rem, 4.4vw, 2.9rem); letter-spacing: -.03em; line-height: 1.1; max-width: 700px; }
-  .parte p { margin: 0; font-size: 1.1rem; color: rgba(255, 255, 255, .86); max-width: 640px; }
-  @media (max-width: 640px) { .parte { padding: 64px 24px 32px; min-height: 250px; margin-top: 96px; } .parte::after { left: 24px; } }
 
   /* ---------- Pontos positivos e negativos ---------- */
   .pc { border-top: 6px solid var(--laranja); }
   .pc.ruim { border-top-color: var(--no-borda); }
   .pc ul { list-style: none; padding: 0; margin: 0; }
-  .pc li { position: relative; padding: 14px 0 14px 42px; border-top: 1px solid var(--borda); }
+  .pc li { position: relative; padding: 12px 0 12px 40px; border-top: 1px solid var(--borda); }
   .pc li:first-child { border-top: 0; }
-  .pc li::before { content: "+"; position: absolute; left: 0; top: 15px; width: 26px; height: 26px; border-radius: 50%;
+  .pc li::before { content: "+"; position: absolute; left: 0; top: 13px; width: 26px; height: 26px; border-radius: 50%;
                    display: grid; place-items: center; font-weight: 800; background: var(--laranja); color: var(--preto); }
   .pc.ruim li::before { content: "−"; background: var(--azul); color: var(--branco); box-shadow: inset 0 0 0 1.5px var(--folha-borda); }
 
-  /* ---------- Controle flutuante de seções ---------- */
-  .controle { position: fixed; right: 20px; bottom: 20px; z-index: 30; display: flex; align-items: center; gap: 2px; padding: 5px;
-              background: var(--azul); color: var(--branco); border-radius: 999px; font-size: .82rem;
-              box-shadow: 0 14px 34px -12px rgba(11, 37, 69, .6), inset 0 0 0 1px var(--folha-borda); }
-  .controle button { width: 44px; height: 44px; min-height: 0; padding: 0; display: grid; place-items: center; border: 0;
-                     background: transparent; color: inherit; border-radius: 50%; }
-  .controle button:hover:not(:disabled) { background: rgba(255, 255, 255, .14); }
-  .controle button svg { width: 20px; height: 20px; }
-  #sec-rot { padding: 0 6px; white-space: nowrap; max-width: 300px; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
-  #sec-rot b { color: var(--laranja); }
-  @media (max-width: 560px) { .controle { right: 12px; bottom: 12px; } #sec-rot .nome { display: none; } }
+  /* ---------- Telas pequenas ---------- */
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    .card { padding: 16px; }
+    .parte { padding: 24px 20px; border-radius: 18px; }
+    .btns.seg { display: grid; grid-template-columns: 1fr 1fr; border-radius: 18px; width: 100%; }
+    .btns.seg button { white-space: normal; line-height: 1.25; padding: 8px 10px; border-radius: 14px; }
+    h2 .n { width: 34px; height: 34px; font-size: 1rem; }
+    .formula { font-size: 1.05rem; }
+    .passo-nav button { flex: 1 1 auto; }
+    .passo-nav > :last-child { flex: 0 0 100%; text-align: left; order: 9; }
+    .pergunta .btns { flex: 1 1 100%; }
+    .pergunta .btns button { flex: 1; }
+    .topo { right: 12px; bottom: 12px; }
+  }
+  @media (pointer: coarse) { .atalho { display: none; } button { min-height: 44px; } }
 
-  /* ---------- Rodapé ---------- */
-  .rodape { border-top: 1px solid var(--borda); }
-  .rodape .in { max-width: 1120px; margin: 0 auto; padding: 32px 32px 120px; display: flex; justify-content: space-between;
-                gap: 16px; flex-wrap: wrap; font-size: .9rem; color: var(--suave); }
-  .rodape a { color: var(--fg); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--laranja); }
+  /* ---------- Movimento reduzido ---------- */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
 
-  /* ---------- Entrada suave das seções ---------- */
-  .anima main section, .anima .parte { opacity: 0; transform: translateY(28px);
-                                       transition: opacity .7s ease, transform .7s cubic-bezier(.2, .7, .2, 1); }
-  .anima main section.visivel, .anima .parte.visivel { opacity: 1; transform: none; }
-
+  /* ---------- Impressão ---------- */
   @media print {
-    nav, .controle, .progresso, svg.hero-arv { display: none !important; }
-    body { padding-left: 0 !important; }
-    .anima main section, .anima .parte { opacity: 1 !important; transform: none !important; }
-    .card, .parte { break-inside: avoid; }
+    nav, .topo, .progresso, .btns, .passo-nav, .trilha { display: none !important; }
+    .shell { display: block; }
+    .card, .parte { break-inside: avoid; box-shadow: none; }
   }
 </style>
 </head>
@@ -310,51 +347,22 @@
 
 <header class="hero" id="topo">
   <div class="in">
-    <div class="hero-txt">
-      <small>Machine Learning · Árvores de Decisão</small>
-      <h1>Árvores de Decisão</h1>
-      <p>Dois exemplos com Python + scikit-learn: <b>classificar</b> (a pessoa vai presencial?) e <b>estimar um valor</b>
-        (quantos litros de cerveja São Paulo consome em um dia).</p>
-      <div class="chips"><span class="on">Python + scikit-learn</span><span>Exemplo 1 · Classificação · Entropia</span><span>Exemplo 2 · Regressão · MSE</span></div>
-      <div class="hero-acoes">
-        <a class="cta" href="#intro">Começar
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
-        <span class="dica-teclas"><kbd>←</kbd><kbd>→</kbd> navegam entre as seções</span>
-      </div>
-    </div>
-    <svg class="hero-arv" viewBox="0 0 400 300" aria-hidden="true">
-      <g fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round" opacity=".45">
-        <path d="M200,60 V92 H100 V124"/><path d="M100,168 V200 H50 V232"/><path d="M100,168 V200 H150 V232"/><path d="M300,168 V200 H250 V232"/>
-      </g>
-      <g fill="none" stroke="#F28C28" stroke-width="4" stroke-linejoin="round"><path d="M200,60 V92 H300 V124"/><path d="M300,168 V200 H350 V232"/></g>
-      <rect x="140" y="16" width="120" height="44" rx="10" fill="rgba(255,255,255,.08)" stroke="#F28C28" stroke-width="3"/>
-      <rect x="166" y="34" width="68" height="8" rx="4" fill="#FFFFFF" opacity=".8"/>
-      <rect x="40" y="124" width="120" height="44" rx="10" fill="rgba(255,255,255,.08)" stroke="#FFFFFF" stroke-opacity=".6" stroke-width="2"/>
-      <rect x="70" y="142" width="60" height="8" rx="4" fill="#FFFFFF" opacity=".6"/>
-      <rect x="240" y="124" width="120" height="44" rx="10" fill="rgba(255,255,255,.08)" stroke="#F28C28" stroke-width="3"/>
-      <rect x="266" y="142" width="68" height="8" rx="4" fill="#FFFFFF" opacity=".8"/>
-      <rect x="8" y="232" width="84" height="40" rx="20" fill="#F28C28"/>
-      <rect x="108" y="232" width="84" height="40" rx="20" fill="#0B2545" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="1.5"/>
-      <rect x="208" y="232" width="84" height="40" rx="20" fill="#0B2545" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="1.5"/>
-      <rect x="308" y="232" width="84" height="40" rx="20" fill="#F28C28" stroke="#FFFFFF" stroke-width="3"/>
-    </svg>
+    <h1>Árvores de Decisão</h1>
+    <p>Dois exemplos com Python + scikit-learn: <b>classificar</b> (a pessoa vai presencial?) e <b>estimar um valor</b>
+      (quantos litros de cerveja São Paulo consome em um dia).</p>
+    <div class="hero-links"><a href="#intro">Exemplo 1: Classificação</a><a href="#r-intro">Exemplo 2: Regressão</a></div>
   </div>
 </header>
 
-<nav aria-label="Seções">
-  <div class="marca"><small>Machine Learning</small><b>Árvores de Decisão</b><span>Python + scikit-learn</span></div>
-  <div class="in">
+<div class="shell">
+<nav aria-label="Seções"><div class="in">
   <span class="rot">Classificação</span><a href="#intro">Introdução</a><a href="#cenario">Cenário</a><a href="#intuicao">Intuição</a><a href="#entropia">Entropia e Ganho</a><a href="#feriado">Feriado</a><a href="#classificar">Classificar</a><a href="#pros">Prós e contras</a>
-  <span class="rot">Regressão</span><a href="#r-intro">Introdução</a><a href="#r-dados">Dados</a><a href="#r-intuicao">Intuição</a><a href="#r-mse">MSE e Redução</a><a href="#r-chuva">Chuva</a><a href="#r-estimar">Estimar</a><a href="#r-pros">Prós e contras</a>
-</div>
-  <div class="dica"><kbd>←</kbd><kbd>→</kbd> seção anterior / próxima</div>
-</nav>
+  <span class="rot">Regressão</span><a href="#r-intro">Introdução</a><a href="#r-dados">Dados</a><a href="#r-intuicao">Intuição</a><a href="#r-mse">MSE e Redução</a><a href="#r-prof">Profundidade</a><a href="#r-estimar">Estimar</a><a href="#r-pros">Prós e contras</a>
+</div></nav>
 
 <main>
 
-  <div class="parte" data-n="01"><small>Exemplo 1</small><h2>Classificação: vai presencial?</h2><p>A árvore responde <b>qual classe</b>, usando Entropia e Ganho de Informação.</p></div>
-
-  <div class="parte-cla">
+  <div class="parte"><small>Exemplo 1</small><h2>Classificação: vai presencial?</h2><p>A árvore responde <b>qual classe</b>, usando Entropia e Ganho de Informação.</p></div>
 
   <section id="intro">
     <h2><span class="n">1</span>Introdução</h2>
@@ -367,9 +375,9 @@
     <h2><span class="n">2</span>O cenário</h2>
     <p class="lead">Modelo híbrido <b>sem escala</b>: cada pessoa escolhe os dias em que vai ao escritório.</p>
     <div class="regras">
-      <div class="regra"><b>Cientistas de dados</b>vão presencial só na segunda-feira.</div>
+      <div class="regra"><b>Cientistas de dados</b>vão presencial uma vez por semana, preferencialmente na segunda-feira.</div>
       <div class="regra"><b>Demais pessoas da área</b>vão dois dias: segunda e terça (dia preferencial).</div>
-      <div class="regra destaque"><b>Ou seja…</b>segunda-feira é presencial para todos.</div>
+      <div class="regra destaque"><b>Ou seja…</b>na prática, segunda-feira é presencial para todos.</div>
     </div>
     <p>Cada linha é <b>uma pessoa em um dia</b>. Alvo: <b>Presencial?</b> <span class="tag p">Sim</span> <span class="tag h">Não</span></p>
     <div class="wrap">
@@ -384,7 +392,7 @@
     <h2><span class="n">3</span>Intuição: traçando "retas"</h2>
     <p class="lead">Cada ponto é uma situação. A árvore procura <b>retas</b> (perguntas Sim/Não) que deixem cada região com
       uma só cor. A cada reta, a árvore ganha um nó.</p>
-    <div class="btns" id="passos">
+    <div class="btns seg" id="passos" role="group" aria-label="Passos da intuição">
       <button data-p="0" class="on">Só os pontos</button>
       <button data-p="1">1ª reta: é segunda?</button>
       <button data-p="2">2ª reta: é cientista?</button>
@@ -401,6 +409,13 @@
     <h2><span class="n">4</span>Entropia e Ganho de Informação</h2>
     <p class="lead">Por que a árvore pergunta <b>"É segunda?"</b> primeiro? Ela mede a <b>mistura</b> de cada grupo e escolhe
       a pergunta que mais reduz essa mistura.</p>
+    <details class="card aprofundar" open style="margin-bottom:16px">
+      <summary>A curva da entropia</summary>
+      <p style="margin:0 0 8px">Com duas classes, a entropia depende só da proporção <b>p</b> de <b>Sim</b> no grupo:
+        H(p) = −p · log₂(p) − (1 − p) · log₂(1 − p). Vale <b>0</b> nas pontas (grupo puro) e chega ao máximo, <b>1</b>,
+        em p = 0,5 (metade/metade).</p>
+      <svg id="curva-h-simples" viewBox="0 0 640 345" role="img" aria-label="Curva da entropia em função da proporção de Sim"></svg>
+    </details>
     <div class="row">
       <div class="card">
         <h3>Entropia — quanta mistura existe no grupo</h3>
@@ -414,13 +429,14 @@
       </div>
     </div>
 
-    <div class="card" style="margin-top:16px">
+    <div class="card lab passo-card" style="margin-top:16px">
       <div class="passo-topo">
         <h3 style="margin:0">Exemplo passo a passo</h3>
+        <span class="atalho">Use <kbd>←</kbd> <kbd>→</kbd> para navegar</span>
         <div class="trilha" id="trilha"></div>
       </div>
-      <div id="passo-corpo"></div>
-      <div class="btns" style="margin-bottom:0">
+      <div id="passo-corpo" aria-live="polite"></div>
+      <div class="btns passo-nav">
         <button id="passo-ant">◀ Anterior</button>
         <button id="passo-prox" class="prim">Próximo ▶</button>
         <button id="passo-reset">Recomeçar</button>
@@ -447,6 +463,14 @@
       Mas o algoritmo coloca <b>feriado na raiz</b>: é a pergunta que mais limpa a mistura de uma vez.
       A Árvore de Decisão é <b>gulosa</b> — escolhe a melhor pergunta em cada passo, não a que parece mais lógica para nós.
       No ramo "não é feriado" sobram exatamente os 6 casos do exemplo base, então ali dentro cresce a mesma árvore de antes.</p>
+    <details class="card aprofundar" style="margin-top:16px">
+      <summary>Aprofundando: o ganho de cada pergunta na curva</summary>
+      <p style="margin:0 0 8px">Escolha uma pergunta e veja os grupos na curva: o <b>ganho</b> é a distância entre o pai (laranja)
+        e a média ponderada dos filhos, que fica na reta entre eles.</p>
+      <div class="btns seg" id="curva-h-perguntas" role="group" aria-label="Perguntas"></div>
+      <svg id="curva-h" viewBox="0 0 640 345" role="img" aria-label="Pai, filhos e ganho de cada pergunta na curva da entropia"></svg>
+      <p id="curva-h-txt" style="margin:8px 0 0"></p>
+    </details>
     <div class="card" style="margin-top:16px"><h3>Árvore com feriado</h3><svg id="arvore-v2" class="arv" role="img" aria-label="Árvore com feriado"></svg></div>
   </section>
 
@@ -455,9 +479,9 @@
     <p class="lead">Responda as perguntas na ordem da árvore final. A cada resposta, a árvore revela os dois ramos daquela
       pergunta e acende o caminho escolhido. A próxima pergunta pisca em laranja.</p>
     <div class="row classif">
-      <div class="card">
+      <div class="card lab">
         <div id="perguntas"></div>
-        <div id="resultado"></div>
+        <div id="resultado" aria-live="polite"></div>
         <div class="btns" style="margin-bottom:0"><button id="reset">↺ Limpar respostas</button></div>
       </div>
       <div class="card"><svg id="arvore-final" class="arv" role="img" aria-label="Árvore final"></svg></div>
@@ -490,9 +514,7 @@
   </section>
 
 
-  </div>
-
-  <div class="parte" data-n="02"><small>Exemplo 2</small><h2>Regressão: consumo de cerveja em São Paulo</h2><p>A árvore responde <b>quanto</b>, usando MSE e Redução do erro.</p></div>
+  <div class="parte"><small>Exemplo 2</small><h2>Regressão: consumo de cerveja em São Paulo</h2><p>A árvore responde <b>quanto</b>, usando MSE e Redução do erro.</p></div>
   <div class="parte-reg">
 
   <section id="r-intro">
@@ -516,12 +538,11 @@
   <section id="r-dados">
     <h2><span class="n">2</span>Os dados</h2>
     <p class="lead">Dataset <b>Beer Consumption – São Paulo</b> (Kaggle): consumo diário de cerveja em 2015, junto com o clima.
-      Usamos <b>temperatura máxima</b> e <b>fim de semana</b>; a <b>chuva</b> entra só na parte 5.
-      No CSV o consumo aparece como <code>25.461</code>: o ponto é separador de milhar, ou seja, <b>25.461 litros</b>.</p>
+      Para enxergar <b>cada corte</b> da árvore num gráfico só, usamos <b>uma variável</b>: a temperatura máxima.      No CSV o consumo aparece como <code>25.461</code>: o ponto é separador de milhar, ou seja, <b>25.461 litros</b>.</p>
     <div class="regras" id="r-kpis"></div>
     <div class="wrap">
       <table id="r-tabela">
-        <thead><tr><th>Data</th><th>Temp. máxima</th><th>Fim de semana?</th><th>Chuva</th><th>Consumo</th></tr></thead>
+        <thead><tr><th>Data</th><th>Temp. máxima</th><th>Consumo</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -531,27 +552,29 @@
 
   <section id="r-intuicao">
     <h2><span class="n">3</span>Intuição: cortes e "degraus"</h2>
-    <p class="lead">Cada ponto é um dia. Na classificação as retas separavam <b>cores</b>; aqui cada corte divide os dias em
-      grupos e a previsão de cada grupo é a <b>média</b> ali dentro — uma linha horizontal. O resultado é uma previsão em degraus.</p>
-    <div class="btns" id="r-passos">
+    <p class="lead">Cada ponto é um dia. Na classificação as retas separavam <b>cores</b>; aqui cada corte é uma <b>linha
+      vertical</b> na temperatura e a previsão de cada faixa é a <b>média</b> ali dentro — uma linha horizontal. O resultado é uma <b>escada</b>.</p>
+    <div class="btns seg" id="r-passos" role="group" aria-label="Passos da intuição">
       <button data-p="0" class="on">Sem pergunta</button>
-      <button data-p="1">1º corte: temperatura</button>
-      <button data-p="2">2º corte: fim de semana</button>
+      <button data-p="1">1º corte</button>
+      <button data-p="2">2º nível: corta cada lado</button>
     </div>
     <p id="r-legenda-passo"></p>
     <div class="row">
       <div class="card"><h3>Temperatura máxima × consumo</h3>
         <svg id="r-dispersao" viewBox="0 0 520 370" role="img" aria-label="Dispersão de temperatura máxima por consumo"></svg>
-        <div class="legenda"><span><i style="background:var(--laranja)"></i>Fim de semana</span><span><i style="background:var(--azul)"></i>Dia útil</span></div>
+        <div class="legenda"><span><i style="background:var(--ponto)"></i>Dia de 2015</span><span><i class="linha" style="background:var(--laranja)"></i>Previsão da árvore</span></div>
       </div>
-      <div class="card"><h3>Árvore</h3><svg id="r-arvore-passo" class="arv" role="img" aria-label="Árvore sendo construída"></svg></div>
+      <div class="card"><h3>Árvore</h3><svg id="r-arvore-passo" class="arv" role="img" aria-label="Árvore sendo construída"></svg>
+        <div class="legenda"><span><i style="background:var(--laranja)"></i>Folha acima da média geral</span><span><i style="background:var(--azul)"></i>Abaixo</span></div>
+      </div>
     </div>
   </section>
 
   <section id="r-mse">
     <h2><span class="n">4</span>MSE e Redução do erro</h2>
-    <p class="lead">Por que a árvore corta primeiro pela <b>temperatura</b>? Ela mede o <b>espalhamento</b> do consumo em cada
-      grupo e escolhe a pergunta que mais reduz esse espalhamento.</p>
+    <p class="lead">Por que cortar em <b>25,85 °C</b> e não em outro lugar? A árvore mede o <b>espalhamento</b> do consumo em cada
+      grupo e escolhe o corte que mais reduz esse espalhamento.</p>
     <div class="row">
       <div class="card">
         <h3>MSE — quão espalhado está o consumo no grupo</h3>
@@ -559,81 +582,93 @@
         <small><b>0</b> = todos os dias iguais à média · quanto maior, pior a média como previsão</small>
       </div>
       <div class="card">
-        <h3>Redução — quanto a pergunta diminui o MSE</h3>
+        <h3>Redução — quanto o corte diminui o MSE</h3>
         <div class="formula">ΔMSE = MSE(pai) − Σ (n<sub>filho</sub> / n<sub>pai</sub>) · MSE(filho)</div>
-        <small>Em cada nó, a árvore escolhe a pergunta com <b>maior redução</b>.</small>
+        <small>Em cada nó, a árvore escolhe o corte com <b>maior redução</b>.</small>
       </div>
     </div>
 
-    <div class="card" style="margin-top:16px">
+    <div class="card lab passo-card" style="margin-top:16px">
       <div class="passo-topo">
         <h3 style="margin:0">Exemplo passo a passo — a raiz</h3>
+        <span class="atalho">Use <kbd>←</kbd> <kbd>→</kbd> para navegar</span>
         <div class="trilha" id="r-trilha"></div>
       </div>
-      <div id="r-passo-corpo"></div>
-      <div class="btns" style="margin-bottom:0">
+      <div id="r-passo-corpo" aria-live="polite"></div>
+      <div class="btns passo-nav">
         <button id="r-passo-ant">◀ Anterior</button>
         <button id="r-passo-prox" class="prim">Próximo ▶</button>
         <button id="r-passo-reset">Recomeçar</button>
       </div>
     </div>
 
-    <div class="card" style="margin-top:16px">
+    <div class="card lab" style="margin-top:16px">
       <h3>Teste você: onde cortar a temperatura?</h3>
       <p style="margin:0 0 8px">Arraste o limiar. A curva mostra a redução do MSE para <b>cada</b> limiar possível — a árvore fica com o pico.</p>
       <svg id="r-curva" viewBox="0 0 520 210" role="img" aria-label="Redução do MSE por limiar de temperatura"></svg>
-      <div class="temp" style="margin:8px 0 4px"><input type="range" id="r-limiar"><output id="r-limiar-out"></output></div>
+      <div class="temp" style="margin:8px 0 4px"><input type="range" id="r-limiar" aria-label="Limiar de temperatura"><output id="r-limiar-out"></output></div>
       <div class="row" id="r-limiar-lados" style="margin-top:8px"></div>
-      <div class="btns" style="margin-bottom:0"><button id="r-ir-melhor" class="prim">Ir para o melhor limiar</button></div>
+      <div class="btns" style="margin-bottom:0"><button id="r-ir-melhor" class="prim">Ir para o melhor limiar</button><button id="r-limiar-reset">Recomeçar</button></div>
     </div>
 
-    <h3 style="margin:32px 0 4px">Repetindo para todas as perguntas, nível a nível</h3>
-    <p class="lead" style="margin-bottom:12px">Para cada variável, a árvore acha o melhor corte. A linha destacada é a escolhida.</p>
-    <div class="stack" id="r-niveis"></div>
+    <h3 style="margin:32px 0 4px">Nível 2 — a mesma conta dentro de cada lado</h3>
+    <p class="lead" style="margin-bottom:12px">Não há nada de novo no 2º nível: a árvore repete a curva acima, agora só com os dias de cada lado.</p>
+    <div class="row">
+      <div class="card"><h3 id="r-frio-titulo"></h3>
+        <svg id="r-curva-frio" viewBox="0 0 520 210" role="img" aria-label="Redução do MSE no lado frio"></svg>
+        <p id="r-frio-txt" style="margin:8px 0 0"></p></div>
+      <div class="card"><h3 id="r-quente-titulo"></h3>
+        <svg id="r-curva-quente" viewBox="0 0 520 210" role="img" aria-label="Redução do MSE no lado quente"></svg>
+        <p id="r-quente-txt" style="margin:8px 0 0"></p></div>
+    </div>
+    <p class="nota" id="r-niveis-nota"></p>
   </section>
 
-  <section id="r-chuva">
-    <h2><span class="n">5</span>Extrapolando: e se a chuva entrar?</h2>
-    <p class="lead">Faz sentido pensar que dia chuvoso tem menos consumo. Colocamos a <b>chuva (mm)</b> na disputa e repetimos as contas.</p>
-    <div class="card" id="r-chuva-efeito"></div>
-    <div class="card" style="margin-top:16px">
-      <h3>Como fica cada nó: redução do MSE de cada variável</h3>
-      <div class="row" id="r-barras"></div>
+  <section id="r-prof">
+    <h2><span class="n">5</span>Profundidade: até onde cortar?</h2>
+    <p class="lead">Nada obriga a árvore a parar em 2 níveis. Sem <code>max_depth</code>, ela continua cortando até cada folha ter
+      só dias com a <b>mesma temperatura</b>. Para saber até onde vale a pena, separamos <b>75%</b> dos dias para treinar
+      e escondemos <b>25%</b> para testar.</p>
+    <div class="card lab">
+      <h3 id="r-prof-titulo"></h3>
+      <div class="temp" style="margin:4px 0 8px"><input type="range" id="r-prof-in" aria-label="max_depth"><output id="r-prof-out"></output></div>
+      <svg id="r-prof-disp" viewBox="0 0 520 370" role="img" aria-label="Previsão em degraus para a profundidade escolhida"></svg>
+      <div class="legenda"><span><i style="background:var(--ponto)"></i>Treino (75%)</span><span><i class="vazado"></i>Teste (25%)</span><span><i class="linha" style="background:var(--laranja)"></i>Previsão</span></div>
+      <p id="r-prof-texto" style="margin:12px 0 0;min-height:3.2em"></p>
     </div>
-    <p class="nota"><b>Surpresa:</b> a chuva <b>reduz</b> o erro, mas <b>perde em todos os nós</b> para temperatura e fim de semana.
-      A árvore é <b>gulosa</b> — em cada nó fica só com a melhor pergunta. Resultado: a árvore com chuva é <b>idêntica</b> à
-      anterior, e o erro também.</p>
+    <div class="card" style="margin-top:16px">
+      <h3>Erro no treino × erro no teste</h3>
+      <div class="regras" id="r-prof-kpis"></div>
+      <svg id="r-treino-teste" viewBox="0 0 960 290" role="img" aria-label="Erro no treino e no teste por profundidade"></svg>
+      <div class="legenda"><span><i class="linha" style="background:var(--ponto)"></i>Erro no treino</span><span><i class="linha tracejada"></i>Erro no teste</span><span><i style="background:var(--laranja)"></i>Menor erro no teste</span></div>
+      <p class="nota" id="r-prof-nota"></p>
+      <p style="margin:12px 0 0;font-size:.9rem;opacity:.8">Os dias de teste foram sorteados entre todos os meses — basta para ensinar.
+        Numa previsão real o teste seria feito com meses que vieram <b>depois</b> do treino.</p>
+    </div>
     <div class="row" style="margin-top:16px">
-      <div class="card"><h3>Árvore com chuva na disputa</h3><svg id="r-arvore-v2" class="arv" role="img" aria-label="Árvore com chuva"></svg></div>
-      <div class="card" style="flex:0 1 380px"><h3>Erro médio de cada modelo</h3>
-        <div class="wrap"><table id="r-erros"><thead><tr><th>Modelo</th><th>MAE</th><th>RMSE</th></tr></thead><tbody></tbody></table></div>
-        <small>MAE = erro absoluto médio, em litros.</small>
+      <div class="card"><h3>Por que o erro de treino não chega a zero?</h3>
+        <p style="margin:0 0 12px" id="r-dias28-txt"></p>
+        <div class="wrap"><table id="r-dias28"><thead><tr><th>Data</th><th>Temp. máxima</th><th>Fim de semana?</th><th>Consumo</th></tr></thead><tbody></tbody></table></div>
+        <p class="nota">A temperatura não consegue separar esses dias. Mas repare: os dias de 28 °C de <b>fim de semana</b>
+          passam todos de 32 mil litros. Outras variáveis explicariam parte dessa diferença — aqui ficamos só com a temperatura.</p>
+      </div>
+      <div class="card"><h3>Outro freio: <code>min_samples_leaf</code></h3>
+        <p style="margin:0 0 12px">Em vez de limitar a profundidade, dá para exigir um <b>mínimo de dias em cada folha</b>.</p>
+        <div class="wrap"><table id="r-minfolha"><thead><tr><th>Mínimo por folha</th><th>Folhas</th><th>Erro treino</th><th>Erro teste</th></tr></thead><tbody></tbody></table></div>
+        <p class="nota" id="r-minfolha-nota"></p>
       </div>
     </div>
   </section>
 
   <section id="r-estimar">
     <h2><span class="n">6</span>Estime o consumo de um dia</h2>
-    <p class="lead">Responda as perguntas na ordem da árvore. A cada resposta, a árvore revela os dois ramos daquela pergunta e
-      acende o caminho. A estimativa é a média dos dias parecidos.</p>
-    <div class="row classif">
-      <div class="card">
-        <div id="r-perguntas">
-          <div class="pergunta" data-f="t">
-            <span><b class="num">1</b>Qual a temperatura máxima?</span>
-            <div class="temp"><input type="range" id="r-temp-in" min="14" max="37" step="0.5" value="26"><output id="r-temp-out"></output>
-              <button id="r-temp-ok" class="prim">Responder</button></div>
-          </div>
-          <div class="pergunta" data-f="w">
-            <span><b class="num">2</b>É fim de semana?</span>
-            <div class="btns" data-f="w"><button data-v="1">Sim</button><button data-v="0">Não</button></div>
-          </div>
-        </div>
-        <div id="r-resultado"></div>
-        <div class="btns" style="margin-bottom:0"><button id="r-reset">↺ Limpar respostas</button></div>
-        <p style="margin:12px 0 0;font-size:.9rem;opacity:.8">A chuva não é perguntada: a árvore não usa essa variável.</p>
-      </div>
-      <div class="card"><svg id="r-arvore-final" class="arv" role="img" aria-label="Árvore final"></svg></div>
+    <p class="lead">Usamos a árvore de <b>3 níveis</b>, a que errou menos no teste. Arraste a temperatura e veja o caminho
+      aceso na árvore. A estimativa é a média dos dias parecidos.</p>
+    <div class="card lab">
+      <div class="temp"><input type="range" id="r-temp-in" min="14" max="37" step="0.5" value="26" aria-label="Temperatura máxima"><output id="r-temp-out"></output></div>
+      <p id="r-caminho" style="margin:12px 0 0"></p>
+      <div id="r-resultado" aria-live="polite"></div>
+      <svg id="r-arvore-final" class="arv larga" role="img" aria-label="Árvore de 3 níveis"></svg>
     </div>
   </section>
 
@@ -643,20 +678,20 @@
     <div class="row">
       <div class="card pc bom"><h3>Pontos positivos</h3>
         <ul>
-          <li><b>Fácil de explicar.</b> Cada folha é a média de dias parecidos: "dia quente de fim de semana ≈ 30.817 litros".</li>
-          <li><b>Captura não linearidade e interação</b> sem criar variáveis novas: o efeito do fim de semana aparece dentro de cada faixa de temperatura.</li>
-          <li><b>Ignora variáveis fracas.</b> A chuva ficou de fora: importância 0.</li>
+          <li><b>Fácil de explicar.</b> Cada folha é a média de dias parecidos: "dia acima de 32,9 °C ≈ 30,9 mil litros".</li>
+          <li><b>Captura não linearidade</b> sem criar variáveis novas: a escada se ajusta onde a relação muda.</li>
+          <li><b>Escolhe o corte sozinha.</b> Testou cerca de 150 limiares e ficou com 25,85 °C.</li>
           <li><b>Pouco preparo dos dados.</b> Não precisa normalizar; temperatura (°C) e Sim/Não convivem na mesma árvore.</li>
-          <li><b>Ganho rápido.</b> Com só 2 perguntas, o erro médio cai de 3.609 L para 2.332 L.</li>
+          <li><b>Ganho rápido.</b> Com só 3 perguntas (2 níveis), o erro médio cai de 3.609 L para 2.734 L.</li>
         </ul>
       </div>
       <div class="card pc ruim"><h3>Pontos negativos</h3>
         <ul>
-          <li><b>Previsão em degraus.</b> Só existem 4 respostas possíveis: um dia útil de 25,8 °C e outro de 25,9 °C recebem previsões que diferem em mais de 4.700 litros.</li>
-          <li><b>Não extrapola.</b> Um dia de 40 °C recebe a mesma previsão de um dia de 26 °C (a média da folha). A árvore nunca prevê além do que viu no treino.</li>
-          <li><b>Overfitting.</b> Com mais níveis surgem folhas com poucos dias — com profundidade 3 já aparece uma folha com só 6 dias.</li>
+          <li><b>Previsão em degraus.</b> Com 2 níveis só existem 4 respostas possíveis: um dia de 25,8 °C e outro de 25,9 °C recebem previsões que diferem em mais de 3 mil litros.</li>
+          <li><b>Não extrapola.</b> O dia mais quente de 2015 teve 36,5 °C. Um dia de 40 °C recebe a mesma previsão da última folha.</li>
+          <li><b>Overfitting.</b> Sem limite, a árvore cria 138 folhas (64 delas com um dia só) e o erro de teste sobe de 3.675 L para 4.452 L. É preciso escolher <code>max_depth</code> ou <code>min_samples_leaf</code> olhando o erro de teste.</li>
           <li><b>Instável.</b> O limiar de 25,85 °C pode mudar bastante com dados de outro ano.</li>
-          <li><b>Erro ainda alto</b> (± 2.332 L): combinações de árvores (Random Forest, Gradient Boosting) costumam errar menos.</li>
+          <li><b>Uma variável só explica parte da história.</b> Nos dias de 28 °C o consumo foi de 17 mil a 33 mil litros. Mais variáveis (fim de semana) e combinações de árvores (Random Forest, Gradient Boosting) costumam errar menos.</li>
         </ul>
       </div>
     </div>
@@ -664,14 +699,9 @@
 
   </div>
 </main>
-
-<div class="controle" role="navigation" aria-label="Navegar entre seções">
-  <button id="sec-ant" aria-label="Seção anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
-  <span id="sec-rot" aria-live="polite">Capa</span>
-  <button id="sec-prox" aria-label="Próxima seção"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
 </div>
 
-<footer class="rodape"><div class="in"><span>Árvores de Decisão · Python + scikit-learn</span><a href="#topo">Voltar ao início ↑</a></div></footer>
+<a class="topo" href="#topo" aria-label="Voltar ao topo">↑</a>
 
 <script>
 // ===== Exemplo 1 — Classificação
@@ -978,6 +1008,73 @@ document.getElementById("niveis2").innerHTML =
   </div>`;
 desenharArvore(document.getElementById("arvore-v2"), ARV_V2);
 
+// ---- Curva da entropia: H em função da proporção de Sim, com o pai, os filhos e o ganho
+const ch = document.getElementById("curva-h");
+const HX0 = 70, HY0 = 34, HW = 540, HH = 250;
+const hx = p => HX0 + p * HW, hy = h => HY0 + HH - h * HH;
+const H2 = p => p <= 0 || p >= 1 ? 0 : -p * Math.log2(p) - (1 - p) * Math.log2(1 - p);
+const dec = x => x.toLocaleString("pt-BR");
+// eixos e curva: o gráfico simples é só isso; o da seção "Aprofundando" desenha os grupos por cima
+function curvaEntropia(svg) {
+  [0, .25, .5, .75, 1].forEach(v => {
+    el("line", { x1: HX0, x2: HX0 + HW, y1: hy(v), y2: hy(v), class: "grade" }, svg);
+    el("text", { x: HX0 - 8, y: hy(v) + 4, "text-anchor": "end", class: "eixo" }, svg, dec(v));
+    el("text", { x: hx(v), y: HY0 + HH + 18, "text-anchor": "middle", class: "eixo" }, svg, dec(v));
+  });
+  el("text", { x: HX0 + HW / 2, y: HY0 + HH + 42, "text-anchor": "middle", "font-weight": 600, "font-size": 14 }, svg, "Proporção de Sim no grupo (p)");
+  el("text", { x: 16, y: HY0 + HH / 2, "text-anchor": "middle", "font-weight": 600, "font-size": 14,
+               transform: `rotate(-90 16 ${HY0 + HH / 2})` }, svg, "Entropia H(p)");
+  el("path", { d: Array.from({ length: 201 }, (_, i) => `${i ? "L" : "M"}${hx(i / 200).toFixed(1)},${hy(H2(i / 200)).toFixed(1)}`).join(""),
+               fill: "none", "stroke-width": 2.5, style: "stroke: var(--linha)" }, svg);
+}
+curvaEntropia(document.getElementById("curva-h-simples"));
+curvaEntropia(ch);
+const camadaH = el("g", {}, ch);
+const propSim = g => g.filter(d => d.y === "S").length / g.length;
+// rótulos curtos: filho perto do topo da curva fica acima do ponto, grupo puro (no eixo) fica ao lado, os outros abaixo;
+// "lado" (-1/1) empurra o rótulo para longe do pai quando os pontos quase se encostam
+const rotuloH = (p, h, txt, lado = 0) => h < .15
+  ? el("text", { x: hx(p) + (p > .85 ? -14 : 14), y: hy(h) + 5, class: "halo", "font-size": 13,
+                 "text-anchor": p > .85 ? "end" : "start" }, camadaH, txt)
+  : el("text", { x: hx(p) + lado * 10, y: h > .85 ? hy(h) - 14 : hy(h) + 24, class: "halo", "font-size": 13,
+                 "text-anchor": lado < 0 ? "end" : lado > 0 ? "start" : p < .15 ? "start" : p > .85 ? "end" : "middle" }, camadaH, txt);
+const ganhos = Object.fromEntries(["f", "c", "s", "t"].map(f => {
+  const sim = dados2.filter(d => d[f]), nao = dados2.filter(d => !d[f]);
+  return [f, entropia(dados2) - (sim.length * entropia(sim) + nao.length * entropia(nao)) / dados2.length];
+}));
+const fMelhor = Object.keys(ganhos).reduce((a, b) => ganhos[b] > ganhos[a] + 1e-9 ? b : a);
+function mostrarCurvaH(f) {
+  camadaH.innerHTML = "";
+  const sim = dados2.filter(d => d[f]), nao = dados2.filter(d => !d[f]), n = dados2.length;
+  const pPai = propSim(dados2), hPai = entropia(dados2);
+  const filhos = [[sim, "ramo Sim"], [nao, "ramo Não"]].map(([g, nome]) => ({ g, nome, p: propSim(g), h: entropia(g) }));
+  const hMedia = (sim.length * filhos[0].h + nao.length * filhos[1].h) / n;
+  // reta entre os filhos: a média ponderada cai sobre ela, na proporção do pai
+  el("line", { x1: hx(filhos[0].p), y1: hy(filhos[0].h), x2: hx(filhos[1].p), y2: hy(filhos[1].h),
+               "stroke-width": 2, "stroke-dasharray": "7 5", style: "stroke: var(--linha)" }, camadaH);
+  el("line", { x1: hx(pPai), x2: hx(pPai), y1: hy(hMedia), y2: hy(hPai), "stroke-width": 5, stroke: "#F28C28" }, camadaH);
+  el("text", { x: hx(pPai) + 10, y: (hy(hMedia) + hy(hPai)) / 2 + 5, class: "halo" }, camadaH, `ganho = ${fmt(hPai - hMedia)}`);
+  el("circle", { cx: hx(pPai), cy: hy(hMedia), r: 6, fill: "none", "stroke-width": 2.5, style: "stroke: var(--linha)" }, camadaH);
+  filhos.forEach(c => {
+    el("circle", { cx: hx(c.p), cy: hy(c.h), r: 8, fill: COR.N, style: "stroke: var(--linha); stroke-width: 1.5" }, camadaH);
+    rotuloH(c.p, c.h, c.nome, Math.abs(c.p - pPai) < .1 ? Math.sign(c.p - pPai) : 0);
+  });
+  el("circle", { cx: hx(pPai), cy: hy(hPai), r: 9, fill: COR.S, style: "stroke: var(--linha); stroke-width: 1.5" }, camadaH);
+  // ganho pequeno: o pai e a média quase se encostam, então o rótulo vai para baixo (dentro do arco, que fica vazio)
+  const pequeno = hPai - hMedia < .05;
+  el("text", { x: hx(pPai) - (pequeno ? 0 : 16), y: hy(hPai) + (pequeno ? 34 : 5), "text-anchor": pequeno ? "middle" : "end",
+               class: "halo", "font-size": 13 }, camadaH, "pai");
+  document.querySelectorAll("#curva-h-perguntas button").forEach(b => b.classList.toggle("on", b.dataset.f === f));
+  document.getElementById("curva-h-txt").innerHTML = `Pai: ${conta(dados2)} · ramo Sim: ${conta(sim)} · ramo Não: ${conta(nao)}<br>
+    <b>${NOME_F[f]}</b> H(pai) = ${fmt(hPai)} · média dos filhos =
+    (${sim.length}/${n}) × ${fmt(filhos[0].h)} + (${nao.length}/${n}) × ${fmt(filhos[1].h)} = ${fmt(hMedia)} ·
+    <span class="res">ganho = ${fmt(hPai - hMedia)}</span>${f === fMelhor ? " — o maior de todos: vira a raiz." : ""}`;
+}
+const botoesH = document.getElementById("curva-h-perguntas");
+botoesH.innerHTML = ["f", "s", "c", "t"].map(f => `<button data-f="${f}">${NOME_F[f]}</button>`).join("");
+botoesH.onclick = e => { if (e.target.dataset.f) mostrarCurvaH(e.target.dataset.f); };
+mostrarCurvaH("f");
+
 // ---- Classificador (árvore final, começa em branco e vai aparecendo)
 const sf = document.getElementById("arvore-final");
 // mesma ordem das perguntas na árvore
@@ -1029,13 +1126,18 @@ atualizar();
 // ===== Exemplo 2 — Regressão
 (() => {
 
-// [data, temperatura máxima (°C), fim de semana (0/1), chuva (mm), consumo (litros)] — 365 dias de 2015
+// [data, temperatura máxima (°C), fim de semana (0/1), consumo (litros)] — 365 dias de 2015
 // no CSV o consumo vem como 25.461: o ponto é separador de milhar, ou seja, 25.461 litros
-const DADOS = [["2015-01-01",32.5,0,0.0,25461],["2015-01-02",33.5,0,0.0,28972],["2015-01-03",29.9,1,0.0,30814],["2015-01-04",28.6,1,1.2,29799],["2015-01-05",28.3,0,0.0,28900],["2015-01-06",30.5,0,12.2,28218],["2015-01-07",33.7,0,0.0,29732],["2015-01-08",32.8,0,48.6,28397],["2015-01-09",34.0,0,4.4,24886],["2015-01-10",34.2,1,0.0,37937],["2015-01-11",34.8,1,3.4,36254],["2015-01-12",35.4,0,0.0,25743],["2015-01-13",34.8,0,0.8,26990],["2015-01-14",34.0,0,1.6,31825],["2015-01-15",32.8,0,3.0,25724],["2015-01-16",32.7,0,2.0,29938],["2015-01-17",35.8,1,0.0,37690],["2015-01-18",35.6,1,0.0,30524],["2015-01-19",36.5,0,3.7,29265],["2015-01-20",35.6,0,0.6,35127],["2015-01-21",30.9,0,0.0,29130],["2015-01-22",26.1,0,31.0,25795],["2015-01-23",26.1,0,3.6,21784],["2015-01-24",29.4,1,13.0,28348],["2015-01-25",30.0,1,0.0,31088],["2015-01-26",28.7,0,20.8,21520],["2015-01-27",28.7,0,1.2,29972],["2015-01-28",29.9,0,4.9,22603],["2015-01-29",29.2,0,0.0,22696],["2015-01-30",26.9,0,0.0,26845],["2015-01-31",24.3,1,0.2,27030],["2015-02-01",28.0,1,0.0,32057],["2015-02-02",26.5,0,4.5,24097],["2015-02-03",31.1,0,1.6,31655],["2015-02-04",23.7,0,3.2,24738],["2015-02-05",22.9,0,5.6,19950],["2015-02-06",25.4,0,18.4,22821],["2015-02-07",28.7,1,16.7,28893],["2015-02-08",29.5,1,10.4,29926],["2015-02-09",30.7,0,0.0,24062],["2015-02-10",29.0,0,32.2,21137],["2015-02-11",30.4,0,2.2,26805],["2015-02-12",32.7,0,0.0,26389],["2015-02-13",32.1,0,0.0,24219],["2015-02-14",31.6,1,0.0,30231],["2015-02-15",27.6,1,17.4,24968],["2015-02-16",27.3,0,22.7,25343],["2015-02-17",28.0,0,85.3,17399],["2015-02-18",26.4,0,13.4,21392],["2015-02-19",28.5,0,2.4,22922],["2015-02-20",28.2,0,0.0,24567],["2015-02-21",31.1,1,0.0,30943],["2015-02-22",30.8,1,0.0,30825],["2015-02-23",31.4,0,0.0,25692],["2015-02-24",31.9,0,0.0,26959],["2015-02-25",29.3,0,2.0,25366],["2015-02-26",30.3,0,34.4,22784],["2015-02-27",31.4,0,0.6,26241],["2015-02-28",27.7,1,0.0,26467],["2015-03-01",26.3,1,3.0,27475],["2015-03-02",29.2,0,0.0,28749],["2015-03-03",29.5,0,0.0,24146],["2015-03-04",30.5,0,0.0,22988],["2015-03-05",31.6,0,0.0,30300],["2015-03-06",28.5,0,0.0,22654],["2015-03-07",26.6,1,38.2,29090],["2015-03-08",24.4,1,69.2,24619],["2015-03-09",23.3,0,77.0,20016],["2015-03-10",26.9,0,9.7,23042],["2015-03-11",28.1,0,9.5,22933],["2015-03-12",26.9,0,1.2,22409],["2015-03-13",26.6,0,0.0,21281],["2015-03-14",27.9,1,12.2,28844],["2015-03-15",26.8,1,0.3,32872],["2015-03-16",29.4,0,22.4,20903],["2015-03-17",25.6,0,24.2,26275],["2015-03-18",24.1,0,0.0,20167],["2015-03-19",27.1,0,3.2,23628],["2015-03-20",28.2,0,7.4,24213],["2015-03-21",25.3,1,14.7,28631],["2015-03-22",22.8,1,1.7,25855],["2015-03-23",23.3,0,19.2,21406],["2015-03-24",26.3,0,0.0,21617],["2015-03-25",27.9,0,0.0,22401],["2015-03-26",29.8,0,0.0,27989],["2015-03-27",30.8,0,0.0,24974],["2015-03-28",29.5,1,0.0,29760],["2015-03-29",26.6,1,0.0,26116],["2015-03-30",25.9,0,18.6,25850],["2015-03-31",29.0,0,1.0,24925],["2015-04-01",27.5,0,0.0,21979],["2015-04-02",26.2,0,0.0,22116],["2015-04-03",27.2,0,0.0,24867],["2015-04-04",29.4,1,0.0,33450],["2015-04-05",26.4,1,0.0,32713],["2015-04-06",27.7,0,0.0,22356],["2015-04-07",20.0,0,7.1,21004],["2015-04-08",24.3,0,0.4,23362],["2015-04-09",25.6,0,0.0,20298],["2015-04-10",25.5,0,0.0,24862],["2015-04-11",28.4,1,0.0,30505],["2015-04-12",25.7,1,0.0,25070],["2015-04-13",25.7,0,0.0,22620],["2015-04-14",28.8,0,0.0,22001],["2015-04-15",27.4,0,0.0,23469],["2015-04-16",26.7,0,25.4,21735],["2015-04-17",27.0,0,37.2,21593],["2015-04-18",29.3,1,0.0,33822],["2015-04-19",27.2,1,0.0,28028],["2015-04-20",29.2,0,20.2,24304],["2015-04-21",29.0,0,0.0,31108],["2015-04-22",21.6,0,2.4,19113],["2015-04-23",24.9,0,14.6,23198],["2015-04-24",28.1,0,0.0,24388],["2015-04-25",23.3,1,0.0,27420],["2015-04-26",23.7,1,0.8,30479],["2015-04-27",24.9,0,0.0,21838],["2015-04-28",26.9,0,0.0,20812],["2015-04-29",22.7,0,0.0,19761],["2015-04-30",18.7,0,0.0,20452],["2015-05-01",22.0,0,0.0,17939],["2015-05-02",26.4,1,0.0,25272],["2015-05-03",26.3,1,0.0,28049],["2015-05-04",22.3,0,1.0,25317],["2015-05-05",20.8,0,9.9,21826],["2015-05-06",20.4,0,0.0,20680],["2015-05-07",21.7,0,0.0,19143],["2015-05-08",19.2,0,0.0,18146],["2015-05-09",26.1,1,0.0,25489],["2015-05-10",21.0,1,0.0,23537],["2015-05-11",20.6,0,22.2,16956],["2015-05-12",21.7,0,0.0,19052],["2015-05-13",18.9,0,2.8,17287],["2015-05-14",21.0,0,0.0,20300],["2015-05-15",21.5,0,0.0,20538],["2015-05-16",22.3,1,0.0,23702],["2015-05-17",22.4,1,0.0,28411],["2015-05-18",21.3,0,0.0,21073],["2015-05-19",22.9,0,0.0,24215],["2015-05-20",23.3,0,0.2,19525],["2015-05-21",25.0,0,0.0,20786],["2015-05-22",25.4,0,0.0,20429],["2015-05-23",24.4,1,0.0,27250],["2015-05-24",26.3,1,0.0,31387],["2015-05-25",27.4,0,0.0,26075],["2015-05-26",24.8,0,0.0,22162],["2015-05-27",27.1,0,0.0,24258],["2015-05-28",23.2,0,1.8,24683],["2015-05-29",21.9,0,7.2,21245],["2015-05-30",22.9,1,0.0,25937],["2015-05-31",18.4,1,5.6,26081],["2015-06-01",18.0,0,2.2,16228],["2015-06-02",17.5,0,0.5,20106],["2015-06-03",21.7,0,0.0,21055],["2015-06-04",24.1,0,0.0,22772],["2015-06-05",25.3,0,0.0,25142],["2015-06-06",26.1,1,0.0,31129],["2015-06-07",26.2,1,0.0,30498],["2015-06-08",26.4,0,0.0,26150],["2015-06-09",26.0,0,0.0,21327],["2015-06-10",26.2,0,0.0,22008],["2015-06-11",26.9,0,0.0,24615],["2015-06-12",23.5,0,0.0,22375],["2015-06-13",27.4,1,0.0,29607],["2015-06-14",27.3,1,0.0,32983],["2015-06-15",23.4,0,0.0,19119],["2015-06-16",18.1,0,9.0,21029],["2015-06-17",25.1,0,0.0,23898],["2015-06-18",26.2,0,0.0,24534],["2015-06-19",17.7,0,3.8,16748],["2015-06-20",20.4,1,0.0,23055],["2015-06-21",24.6,1,0.0,28857],["2015-06-22",24.6,0,0.0,23022],["2015-06-23",25.5,0,0.0,27146],["2015-06-24",18.0,0,3.8,17241],["2015-06-25",17.4,0,1.0,19463],["2015-06-26",20.9,0,0.0,21860],["2015-06-27",20.8,1,0.0,24227],["2015-06-28",21.8,1,0.0,27594],["2015-06-29",24.4,0,0.0,24863],["2015-06-30",25.1,0,0.0,20161],["2015-07-01",20.5,0,0.0,20824],["2015-07-02",19.9,0,1.6,19727],["2015-07-03",18.4,0,17.8,14940],["2015-07-04",21.0,1,15.2,24632],["2015-07-05",14.5,1,4.4,21294],["2015-07-06",20.6,0,0.0,18448],["2015-07-07",20.2,0,0.0,21237],["2015-07-08",18.7,0,4.5,19849],["2015-07-09",20.4,0,0.0,20740],["2015-07-10",25.4,0,0.0,25698],["2015-07-11",19.8,1,0.0,26691],["2015-07-12",27.4,1,3.0,33298],["2015-07-13",28.7,0,0.0,25640],["2015-07-14",29.3,0,0.0,23937],["2015-07-15",27.6,0,0.0,28742],["2015-07-16",25.8,0,0.0,21748],["2015-07-17",24.3,0,0.0,22032],["2015-07-18",23.8,1,0.0,24827],["2015-07-19",25.9,1,0.0,32473],["2015-07-20",25.1,0,0.0,20620],["2015-07-21",21.4,0,0.0,21825],["2015-07-22",16.1,0,0.0,14343],["2015-07-23",20.6,0,0.0,19029],["2015-07-24",25.8,0,0.0,21104],["2015-07-25",17.9,1,16.6,20738],["2015-07-26",22.9,1,2.0,25233],["2015-07-27",24.2,0,0.0,18975],["2015-07-28",24.5,0,0.0,19640],["2015-07-29",23.8,0,0.0,22522],["2015-07-30",26.7,0,0.0,24227],["2015-07-31",26.6,0,0.0,24726],["2015-08-01",26.4,1,0.0,32467],["2015-08-02",26.3,1,0.0,31663],["2015-08-03",26.9,0,0.0,25867],["2015-08-04",27.4,0,0.0,27724],["2015-08-05",27.2,0,0.0,22039],["2015-08-06",27.7,0,0.0,26127],["2015-08-07",28.9,0,0.0,26580],["2015-08-08",27.8,1,0.0,31310],["2015-08-09",26.2,1,0.0,33517],["2015-08-10",28.0,0,0.0,23181],["2015-08-11",27.2,0,0.0,24183],["2015-08-12",26.6,0,0.0,24594],["2015-08-13",28.1,0,0.0,22610],["2015-08-14",27.6,0,0.0,25479],["2015-08-15",27.8,1,0.0,29621],["2015-08-16",27.2,1,0.0,26272],["2015-08-17",28.0,0,0.0,22541],["2015-08-18",26.5,0,0.0,23070],["2015-08-19",28.3,0,0.0,26021],["2015-08-20",19.6,0,0.0,17655],["2015-08-21",22.1,0,1.0,23243],["2015-08-22",26.2,1,0.0,30177],["2015-08-23",30.0,1,0.0,27518],["2015-08-24",20.5,0,0.0,23210],["2015-08-25",20.5,0,2.4,21092],["2015-08-26",24.0,0,0.6,23357],["2015-08-27",19.8,0,2.6,17888],["2015-08-28",22.1,0,25.0,22217],["2015-08-29",26.7,1,0.0,31681],["2015-08-30",32.0,1,0.0,31833],["2015-08-31",32.2,0,0.0,28441],["2015-09-01",30.7,0,0.0,22389],["2015-09-02",20.2,0,0.4,20681],["2015-09-03",25.0,0,0.0,24222],["2015-09-04",19.3,0,0.0,19345],["2015-09-05",18.5,1,2.4,21827],["2015-09-06",19.9,1,0.0,23566],["2015-09-07",24.4,0,0.1,20227],["2015-09-08",19.2,0,23.6,17075],["2015-09-09",22.9,0,58.0,16977],["2015-09-10",25.6,0,0.0,21525],["2015-09-11",21.8,0,31.8,21454],["2015-09-12",15.6,1,27.6,21814],["2015-09-13",16.1,1,0.0,21252],["2015-09-14",22.5,0,0.2,20464],["2015-09-15",30.1,0,0.0,30775],["2015-09-16",32.6,0,0.0,25343],["2015-09-17",33.0,0,0.0,33930],["2015-09-18",34.5,0,0.0,26311],["2015-09-19",35.5,1,0.0,31836],["2015-09-20",33.3,1,0.0,34695],["2015-09-21",32.8,0,0.0,29829],["2015-09-22",33.3,0,0.0,26362],["2015-09-23",34.0,0,0.0,32589],["2015-09-24",35.3,0,0.0,30345],["2015-09-25",30.3,0,0.0,29411],["2015-09-26",24.9,1,28.6,29637],["2015-09-27",30.6,1,1.8,32184],["2015-09-28",23.6,0,27.2,17731],["2015-09-29",27.1,0,0.0,24114],["2015-09-30",27.6,0,0.0,28034],["2015-10-01",26.4,0,7.6,22664],["2015-10-02",32.7,0,0.0,27488],["2015-10-03",25.0,1,25.0,24876],["2015-10-04",21.3,1,0.2,24862],["2015-10-05",22.4,0,0.0,24679],["2015-10-06",24.7,0,0.0,22304],["2015-10-07",32.6,0,0.0,30329],["2015-10-08",34.0,0,0.0,33182],["2015-10-09",29.0,0,0.0,23849],["2015-10-10",28.0,1,0.3,33330],["2015-10-11",30.0,1,0.0,34496],["2015-10-12",29.6,0,0.0,26249],["2015-10-13",27.6,0,2.4,26523],["2015-10-14",28.5,0,0.0,26793],["2015-10-15",35.8,0,0.0,35861],["2015-10-16",35.7,0,0.0,27387],["2015-10-17",29.2,1,0.0,32666],["2015-10-18",19.2,1,0.1,22199],["2015-10-19",27.2,0,0.0,24000],["2015-10-20",35.3,0,0.0,27871],["2015-10-21",32.0,0,0.0,31139],["2015-10-22",22.8,0,14.6,23065],["2015-10-23",27.3,0,13.4,26594],["2015-10-24",21.2,1,0.0,27657],["2015-10-25",19.2,1,0.0,26594],["2015-10-26",28.5,0,28.4,28084],["2015-10-27",28.4,0,0.1,27582],["2015-10-28",23.9,0,0.0,24862],["2015-10-29",24.8,0,0.0,22634],["2015-10-30",31.2,0,0.0,31649],["2015-10-31",29.3,1,0.0,35781],["2015-11-01",22.4,1,27.2,24429],["2015-11-02",27.2,0,39.6,20648],["2015-11-03",25.6,0,3.4,22741],["2015-11-04",27.4,0,6.8,21479],["2015-11-05",24.8,0,39.3,23134],["2015-11-06",22.8,0,0.0,20575],["2015-11-07",20.0,1,1.2,24330],["2015-11-08",23.9,1,0.6,28610],["2015-11-09",29.5,0,4.4,28456],["2015-11-10",31.8,0,10.4,27964],["2015-11-11",32.7,0,0.0,29569],["2015-11-12",31.8,0,0.0,29267],["2015-11-13",29.6,0,0.0,28647],["2015-11-14",30.4,1,16.4,26836],["2015-11-15",29.7,1,8.0,29386],["2015-11-16",24.9,0,0.0,24609],["2015-11-17",29.7,0,0.0,26964],["2015-11-18",30.5,0,14.1,23614],["2015-11-19",30.4,0,0.0,22960],["2015-11-20",27.0,0,6.8,20332],["2015-11-21",24.4,1,7.2,30392],["2015-11-22",28.8,1,0.0,31933],["2015-11-23",23.6,0,13.6,21662],["2015-11-24",22.6,0,7.0,21689],["2015-11-25",24.8,0,0.4,25119],["2015-11-26",27.4,0,0.0,25285],["2015-11-27",28.4,0,0.0,28979],["2015-11-28",29.8,1,0.0,34382],["2015-11-29",26.0,1,17.4,30617],["2015-11-30",23.3,0,23.4,20238],["2015-12-01",25.8,0,0.0,24529],["2015-12-02",29.4,0,0.0,30471],["2015-12-03",26.1,0,0.0,28405],["2015-12-04",29.1,0,0.0,29513],["2015-12-05",30.6,1,0.1,32451],["2015-12-06",28.0,1,0.1,32780],["2015-12-07",23.9,0,47.8,23375],["2015-12-08",28.0,0,0.0,27713],["2015-12-09",27.9,0,0.0,27137],["2015-12-10",27.7,0,0.0,22933],["2015-12-11",30.3,0,0.0,30740],["2015-12-12",30.8,1,0.0,29579],["2015-12-13",31.0,1,12.2,29188],["2015-12-14",32.5,0,2.0,28131],["2015-12-15",32.8,0,4.0,28617],["2015-12-16",24.8,0,1.5,21062],["2015-12-17",28.7,0,0.0,24337],["2015-12-18",33.5,0,0.1,27042],["2015-12-19",31.3,1,1.3,32536],["2015-12-20",29.0,1,8.4,30127],["2015-12-21",29.1,0,27.2,24834],["2015-12-22",32.4,0,43.0,26828],["2015-12-23",32.4,0,3.0,26468],["2015-12-24",31.5,0,3.4,31572],["2015-12-25",31.0,0,39.0,26308],["2015-12-26",29.8,1,94.8,21955],["2015-12-27",28.2,1,13.6,32307],["2015-12-28",26.7,0,0.0,26095],["2015-12-29",24.1,0,10.3,22309],["2015-12-30",22.4,0,6.3,20467],["2015-12-31",29.0,0,0.0,22446]];
+const DADOS = [["2015-01-01",32.5,0,25461],["2015-01-02",33.5,0,28972],["2015-01-03",29.9,1,30814],["2015-01-04",28.6,1,29799],["2015-01-05",28.3,0,28900],["2015-01-06",30.5,0,28218],["2015-01-07",33.7,0,29732],["2015-01-08",32.8,0,28397],["2015-01-09",34.0,0,24886],["2015-01-10",34.2,1,37937],["2015-01-11",34.8,1,36254],["2015-01-12",35.4,0,25743],["2015-01-13",34.8,0,26990],["2015-01-14",34.0,0,31825],["2015-01-15",32.8,0,25724],["2015-01-16",32.7,0,29938],["2015-01-17",35.8,1,37690],["2015-01-18",35.6,1,30524],["2015-01-19",36.5,0,29265],["2015-01-20",35.6,0,35127],["2015-01-21",30.9,0,29130],["2015-01-22",26.1,0,25795],["2015-01-23",26.1,0,21784],["2015-01-24",29.4,1,28348],["2015-01-25",30.0,1,31088],["2015-01-26",28.7,0,21520],["2015-01-27",28.7,0,29972],["2015-01-28",29.9,0,22603],["2015-01-29",29.2,0,22696],["2015-01-30",26.9,0,26845],["2015-01-31",24.3,1,27030],["2015-02-01",28.0,1,32057],["2015-02-02",26.5,0,24097],["2015-02-03",31.1,0,31655],["2015-02-04",23.7,0,24738],["2015-02-05",22.9,0,19950],["2015-02-06",25.4,0,22821],["2015-02-07",28.7,1,28893],["2015-02-08",29.5,1,29926],["2015-02-09",30.7,0,24062],["2015-02-10",29.0,0,21137],["2015-02-11",30.4,0,26805],["2015-02-12",32.7,0,26389],["2015-02-13",32.1,0,24219],["2015-02-14",31.6,1,30231],["2015-02-15",27.6,1,24968],["2015-02-16",27.3,0,25343],["2015-02-17",28.0,0,17399],["2015-02-18",26.4,0,21392],["2015-02-19",28.5,0,22922],["2015-02-20",28.2,0,24567],["2015-02-21",31.1,1,30943],["2015-02-22",30.8,1,30825],["2015-02-23",31.4,0,25692],["2015-02-24",31.9,0,26959],["2015-02-25",29.3,0,25366],["2015-02-26",30.3,0,22784],["2015-02-27",31.4,0,26241],["2015-02-28",27.7,1,26467],["2015-03-01",26.3,1,27475],["2015-03-02",29.2,0,28749],["2015-03-03",29.5,0,24146],["2015-03-04",30.5,0,22988],["2015-03-05",31.6,0,30300],["2015-03-06",28.5,0,22654],["2015-03-07",26.6,1,29090],["2015-03-08",24.4,1,24619],["2015-03-09",23.3,0,20016],["2015-03-10",26.9,0,23042],["2015-03-11",28.1,0,22933],["2015-03-12",26.9,0,22409],["2015-03-13",26.6,0,21281],["2015-03-14",27.9,1,28844],["2015-03-15",26.8,1,32872],["2015-03-16",29.4,0,20903],["2015-03-17",25.6,0,26275],["2015-03-18",24.1,0,20167],["2015-03-19",27.1,0,23628],["2015-03-20",28.2,0,24213],["2015-03-21",25.3,1,28631],["2015-03-22",22.8,1,25855],["2015-03-23",23.3,0,21406],["2015-03-24",26.3,0,21617],["2015-03-25",27.9,0,22401],["2015-03-26",29.8,0,27989],["2015-03-27",30.8,0,24974],["2015-03-28",29.5,1,29760],["2015-03-29",26.6,1,26116],["2015-03-30",25.9,0,25850],["2015-03-31",29.0,0,24925],["2015-04-01",27.5,0,21979],["2015-04-02",26.2,0,22116],["2015-04-03",27.2,0,24867],["2015-04-04",29.4,1,33450],["2015-04-05",26.4,1,32713],["2015-04-06",27.7,0,22356],["2015-04-07",20.0,0,21004],["2015-04-08",24.3,0,23362],["2015-04-09",25.6,0,20298],["2015-04-10",25.5,0,24862],["2015-04-11",28.4,1,30505],["2015-04-12",25.7,1,25070],["2015-04-13",25.7,0,22620],["2015-04-14",28.8,0,22001],["2015-04-15",27.4,0,23469],["2015-04-16",26.7,0,21735],["2015-04-17",27.0,0,21593],["2015-04-18",29.3,1,33822],["2015-04-19",27.2,1,28028],["2015-04-20",29.2,0,24304],["2015-04-21",29.0,0,31108],["2015-04-22",21.6,0,19113],["2015-04-23",24.9,0,23198],["2015-04-24",28.1,0,24388],["2015-04-25",23.3,1,27420],["2015-04-26",23.7,1,30479],["2015-04-27",24.9,0,21838],["2015-04-28",26.9,0,20812],["2015-04-29",22.7,0,19761],["2015-04-30",18.7,0,20452],["2015-05-01",22.0,0,17939],["2015-05-02",26.4,1,25272],["2015-05-03",26.3,1,28049],["2015-05-04",22.3,0,25317],["2015-05-05",20.8,0,21826],["2015-05-06",20.4,0,20680],["2015-05-07",21.7,0,19143],["2015-05-08",19.2,0,18146],["2015-05-09",26.1,1,25489],["2015-05-10",21.0,1,23537],["2015-05-11",20.6,0,16956],["2015-05-12",21.7,0,19052],["2015-05-13",18.9,0,17287],["2015-05-14",21.0,0,20300],["2015-05-15",21.5,0,20538],["2015-05-16",22.3,1,23702],["2015-05-17",22.4,1,28411],["2015-05-18",21.3,0,21073],["2015-05-19",22.9,0,24215],["2015-05-20",23.3,0,19525],["2015-05-21",25.0,0,20786],["2015-05-22",25.4,0,20429],["2015-05-23",24.4,1,27250],["2015-05-24",26.3,1,31387],["2015-05-25",27.4,0,26075],["2015-05-26",24.8,0,22162],["2015-05-27",27.1,0,24258],["2015-05-28",23.2,0,24683],["2015-05-29",21.9,0,21245],["2015-05-30",22.9,1,25937],["2015-05-31",18.4,1,26081],["2015-06-01",18.0,0,16228],["2015-06-02",17.5,0,20106],["2015-06-03",21.7,0,21055],["2015-06-04",24.1,0,22772],["2015-06-05",25.3,0,25142],["2015-06-06",26.1,1,31129],["2015-06-07",26.2,1,30498],["2015-06-08",26.4,0,26150],["2015-06-09",26.0,0,21327],["2015-06-10",26.2,0,22008],["2015-06-11",26.9,0,24615],["2015-06-12",23.5,0,22375],["2015-06-13",27.4,1,29607],["2015-06-14",27.3,1,32983],["2015-06-15",23.4,0,19119],["2015-06-16",18.1,0,21029],["2015-06-17",25.1,0,23898],["2015-06-18",26.2,0,24534],["2015-06-19",17.7,0,16748],["2015-06-20",20.4,1,23055],["2015-06-21",24.6,1,28857],["2015-06-22",24.6,0,23022],["2015-06-23",25.5,0,27146],["2015-06-24",18.0,0,17241],["2015-06-25",17.4,0,19463],["2015-06-26",20.9,0,21860],["2015-06-27",20.8,1,24227],["2015-06-28",21.8,1,27594],["2015-06-29",24.4,0,24863],["2015-06-30",25.1,0,20161],["2015-07-01",20.5,0,20824],["2015-07-02",19.9,0,19727],["2015-07-03",18.4,0,14940],["2015-07-04",21.0,1,24632],["2015-07-05",14.5,1,21294],["2015-07-06",20.6,0,18448],["2015-07-07",20.2,0,21237],["2015-07-08",18.7,0,19849],["2015-07-09",20.4,0,20740],["2015-07-10",25.4,0,25698],["2015-07-11",19.8,1,26691],["2015-07-12",27.4,1,33298],["2015-07-13",28.7,0,25640],["2015-07-14",29.3,0,23937],["2015-07-15",27.6,0,28742],["2015-07-16",25.8,0,21748],["2015-07-17",24.3,0,22032],["2015-07-18",23.8,1,24827],["2015-07-19",25.9,1,32473],["2015-07-20",25.1,0,20620],["2015-07-21",21.4,0,21825],["2015-07-22",16.1,0,14343],["2015-07-23",20.6,0,19029],["2015-07-24",25.8,0,21104],["2015-07-25",17.9,1,20738],["2015-07-26",22.9,1,25233],["2015-07-27",24.2,0,18975],["2015-07-28",24.5,0,19640],["2015-07-29",23.8,0,22522],["2015-07-30",26.7,0,24227],["2015-07-31",26.6,0,24726],["2015-08-01",26.4,1,32467],["2015-08-02",26.3,1,31663],["2015-08-03",26.9,0,25867],["2015-08-04",27.4,0,27724],["2015-08-05",27.2,0,22039],["2015-08-06",27.7,0,26127],["2015-08-07",28.9,0,26580],["2015-08-08",27.8,1,31310],["2015-08-09",26.2,1,33517],["2015-08-10",28.0,0,23181],["2015-08-11",27.2,0,24183],["2015-08-12",26.6,0,24594],["2015-08-13",28.1,0,22610],["2015-08-14",27.6,0,25479],["2015-08-15",27.8,1,29621],["2015-08-16",27.2,1,26272],["2015-08-17",28.0,0,22541],["2015-08-18",26.5,0,23070],["2015-08-19",28.3,0,26021],["2015-08-20",19.6,0,17655],["2015-08-21",22.1,0,23243],["2015-08-22",26.2,1,30177],["2015-08-23",30.0,1,27518],["2015-08-24",20.5,0,23210],["2015-08-25",20.5,0,21092],["2015-08-26",24.0,0,23357],["2015-08-27",19.8,0,17888],["2015-08-28",22.1,0,22217],["2015-08-29",26.7,1,31681],["2015-08-30",32.0,1,31833],["2015-08-31",32.2,0,28441],["2015-09-01",30.7,0,22389],["2015-09-02",20.2,0,20681],["2015-09-03",25.0,0,24222],["2015-09-04",19.3,0,19345],["2015-09-05",18.5,1,21827],["2015-09-06",19.9,1,23566],["2015-09-07",24.4,0,20227],["2015-09-08",19.2,0,17075],["2015-09-09",22.9,0,16977],["2015-09-10",25.6,0,21525],["2015-09-11",21.8,0,21454],["2015-09-12",15.6,1,21814],["2015-09-13",16.1,1,21252],["2015-09-14",22.5,0,20464],["2015-09-15",30.1,0,30775],["2015-09-16",32.6,0,25343],["2015-09-17",33.0,0,33930],["2015-09-18",34.5,0,26311],["2015-09-19",35.5,1,31836],["2015-09-20",33.3,1,34695],["2015-09-21",32.8,0,29829],["2015-09-22",33.3,0,26362],["2015-09-23",34.0,0,32589],["2015-09-24",35.3,0,30345],["2015-09-25",30.3,0,29411],["2015-09-26",24.9,1,29637],["2015-09-27",30.6,1,32184],["2015-09-28",23.6,0,17731],["2015-09-29",27.1,0,24114],["2015-09-30",27.6,0,28034],["2015-10-01",26.4,0,22664],["2015-10-02",32.7,0,27488],["2015-10-03",25.0,1,24876],["2015-10-04",21.3,1,24862],["2015-10-05",22.4,0,24679],["2015-10-06",24.7,0,22304],["2015-10-07",32.6,0,30329],["2015-10-08",34.0,0,33182],["2015-10-09",29.0,0,23849],["2015-10-10",28.0,1,33330],["2015-10-11",30.0,1,34496],["2015-10-12",29.6,0,26249],["2015-10-13",27.6,0,26523],["2015-10-14",28.5,0,26793],["2015-10-15",35.8,0,35861],["2015-10-16",35.7,0,27387],["2015-10-17",29.2,1,32666],["2015-10-18",19.2,1,22199],["2015-10-19",27.2,0,24000],["2015-10-20",35.3,0,27871],["2015-10-21",32.0,0,31139],["2015-10-22",22.8,0,23065],["2015-10-23",27.3,0,26594],["2015-10-24",21.2,1,27657],["2015-10-25",19.2,1,26594],["2015-10-26",28.5,0,28084],["2015-10-27",28.4,0,27582],["2015-10-28",23.9,0,24862],["2015-10-29",24.8,0,22634],["2015-10-30",31.2,0,31649],["2015-10-31",29.3,1,35781],["2015-11-01",22.4,1,24429],["2015-11-02",27.2,0,20648],["2015-11-03",25.6,0,22741],["2015-11-04",27.4,0,21479],["2015-11-05",24.8,0,23134],["2015-11-06",22.8,0,20575],["2015-11-07",20.0,1,24330],["2015-11-08",23.9,1,28610],["2015-11-09",29.5,0,28456],["2015-11-10",31.8,0,27964],["2015-11-11",32.7,0,29569],["2015-11-12",31.8,0,29267],["2015-11-13",29.6,0,28647],["2015-11-14",30.4,1,26836],["2015-11-15",29.7,1,29386],["2015-11-16",24.9,0,24609],["2015-11-17",29.7,0,26964],["2015-11-18",30.5,0,23614],["2015-11-19",30.4,0,22960],["2015-11-20",27.0,0,20332],["2015-11-21",24.4,1,30392],["2015-11-22",28.8,1,31933],["2015-11-23",23.6,0,21662],["2015-11-24",22.6,0,21689],["2015-11-25",24.8,0,25119],["2015-11-26",27.4,0,25285],["2015-11-27",28.4,0,28979],["2015-11-28",29.8,1,34382],["2015-11-29",26.0,1,30617],["2015-11-30",23.3,0,20238],["2015-12-01",25.8,0,24529],["2015-12-02",29.4,0,30471],["2015-12-03",26.1,0,28405],["2015-12-04",29.1,0,29513],["2015-12-05",30.6,1,32451],["2015-12-06",28.0,1,32780],["2015-12-07",23.9,0,23375],["2015-12-08",28.0,0,27713],["2015-12-09",27.9,0,27137],["2015-12-10",27.7,0,22933],["2015-12-11",30.3,0,30740],["2015-12-12",30.8,1,29579],["2015-12-13",31.0,1,29188],["2015-12-14",32.5,0,28131],["2015-12-15",32.8,0,28617],["2015-12-16",24.8,0,21062],["2015-12-17",28.7,0,24337],["2015-12-18",33.5,0,27042],["2015-12-19",31.3,1,32536],["2015-12-20",29.0,1,30127],["2015-12-21",29.1,0,24834],["2015-12-22",32.4,0,26828],["2015-12-23",32.4,0,26468],["2015-12-24",31.5,0,31572],["2015-12-25",31.0,0,26308],["2015-12-26",29.8,1,21955],["2015-12-27",28.2,1,32307],["2015-12-28",26.7,0,26095],["2015-12-29",24.1,0,22309],["2015-12-30",22.4,0,20467],["2015-12-31",29.0,0,22446]];
+// posições dos dias de teste: as mesmas do train_test_split(test_size=0.25, random_state=42) do notebook
+const TESTE = new Set([0,3,5,7,9,15,16,22,25,30,33,39,42,45,46,55,56,57,60,63,66,72,73,75,76,77,78,82,84,90,93,94,101,108,109,110,113,114,116,119,124,126,137,152,165,176,183,192,193,195,196,202,203,211,220,224,233,234,237,242,248,253,255,262,265,271,275,283,292,297,300,301,304,309,318,321,323,325,329,331,337,338,340,342,345,346,347,349,352,353,359,361]);
 
 const NS = "http://www.w3.org/2000/svg";
 const COR = { 1: "#F28C28", 0: "#0B2545" };
-const D = DADOS.map(([data, t, w, c, y]) => ({ data, t, w, c, y }));
+// a temperatura vira float32, como no sklearn: assim um dia de teste que cai bem no meio de dois valores
+// do treino (ex.: 26,2 entre 26,1 e 26,3) vai para o mesmo lado do corte que no notebook
+const D = DADOS.map(([data, t, w, y]) => ({ data, t: Math.fround(t), w, y }));
+const TREINO = D.filter((_, i) => !TESTE.has(i)), TESTE_D = D.filter((_, i) => TESTE.has(i));
 
 const f1 = x => x.toFixed(1).replace(".", ",");
 const f2 = x => x.toFixed(2).replace(".", ",");
@@ -1057,25 +1159,25 @@ function dividir(g, f, lim) {
   const nao = g.filter(d => d[f] <= lim), sim = g.filter(d => d[f] > lim);
   return { f, lim, nao, sim, red: mse(g) - (nao.length * mse(nao) + sim.length * mse(sim)) / g.length };
 }
-// testa todos os limiares: ponto médio entre dois valores vizinhos
-function cortes(g, f) {
+// testa todos os limiares (ponto médio entre dois valores vizinhos); minFolha descarta cortes com folhas pequenas
+function cortes(g, f, minFolha = 1) {
   const v = [...new Set(g.map(d => d[f]))].sort((a, b) => a - b);
-  return v.slice(1).map((b, i) => dividir(g, f, (v[i] + b) / 2));
+  return v.slice(1).map((b, i) => dividir(g, f, v[i] / 2 + b / 2))
+    .filter(s => s.nao.length >= minFolha && s.sim.length >= minFolha);
 }
-const melhor = (g, f) => cortes(g, f).reduce((a, b) => !a || b.red > a.red + 1e-12 ? b : a, null);
+const maior = lista => lista.reduce((a, b) => !a || b.red > a.red + 1e-12 ? b : a, null);
+const melhor = (g, f, minFolha) => maior(cortes(g, f, minFolha));
 
-const NOME_F = { t: "Temperatura máxima", w: "Fim de semana", c: "Chuva" };
-const pergunta = (f, lim) => f === "t" ? `Temp. máx > ${f2(lim)} °C?` : f === "w" ? "Fim de semana?" : `Chuva > ${f1(lim)} mm?`;
-const corte = (f, lim) => f === "w" ? "Sim / Não" : f === "t" ? `${f2(lim)} °C` : `${f1(lim)} mm`;
+const pergunta = (f, lim) => f === "t" ? `Temp. máx > ${f2(lim)} °C?` : "Fim de semana?";
 
-// ---- Árvore construída a partir dos dados (mesmo algoritmo guloso do sklearn, max_depth = 2)
-// "de": passo em que a pergunta aparece; "pendente": passo em que aparece só como média provisória
-function construir(dados, feats, profMax) {
+// ---- Árvore construída a partir dos dados (mesmo algoritmo guloso do sklearn)
+// "nivel": profundidade do nó; "de": passo em que a pergunta aparece; "pendente": passo em que aparece só como média provisória
+function construir(dados, feats, profMax = Infinity, minFolha = 1) {
   const nos = {}; let k = 0;
   const cresce = (g, d, w) => {
-    const id = "n" + k++, n = { g, media: media(g), n: g.length, de: d, pendente: null };
+    const id = "n" + k++, n = { g, media: media(g), n: g.length, nivel: d, de: d, pendente: null };
     nos[id] = n;
-    const b = d < profMax ? feats.map(f => melhor(g, f)).filter(Boolean).reduce((a, c) => !a || c.red > a.red + 1e-12 ? c : a, null) : null;
+    const b = d < profMax ? maior(feats.map(f => melhor(g, f, minFolha)).filter(Boolean)) : null;
     if (b && b.red > 0) {
       Object.assign(n, { f: b.f, lim: b.lim, txt: pergunta(b.f, b.lim), de: d + 1, pendente: d });
       n.nao = cresce(b.nao, d + 1, b.f === "w" ? 0 : w);
@@ -1085,8 +1187,23 @@ function construir(dados, feats, profMax) {
   };
   return { raiz: cresce(dados, 0, null), nos };
 }
-const ARV = construir(D, ["t", "w"], 2);
-const ARV2 = construir(D, ["t", "w", "c"], 2);
+const profundidade = arv => Math.max(...Object.values(arv.nos).map(n => n.nivel));
+// Folha onde o dia cai quando a árvore é cortada na profundidade "prof"
+function folhaAte(arv, d, prof = Infinity) {
+  let n = arv.nos[arv.raiz];
+  while (!n.folha && n.nivel < prof) n = arv.nos[d[n.f] > n.lim ? n.sim : n.nao];
+  return n;
+}
+const folhasAte = (arv, prof = Infinity) => Object.values(arv.nos).filter(n => n.nivel === prof || (n.folha && n.nivel < prof));
+const rmse = (arv, g, prof) => Math.sqrt(g.reduce((s, d) => s + (folhaAte(arv, d, prof).media - d.y) ** 2, 0) / g.length);
+const erro = prev => ({
+  mae: D.reduce((s, d) => s + Math.abs(prev(d) - d.y), 0) / D.length,
+  rmse: Math.sqrt(D.reduce((s, d) => s + (prev(d) - d.y) ** 2, 0) / D.length),
+});
+
+const ARV = construir(D, ["t"], 2);              // partes 3 e 4
+const ARV3 = construir(D, ["t"], 3);             // estimador
+const CHEIA_TR = construir(TREINO, ["t"]);       // sem limite, só treino: cortada em cada profundidade na parte 5
 
 // Layout: cada nível abre metade da distância do nível de cima, para as folhas não se encostarem
 const NO_Q = 206, NO_F = 136, NO_A = 50, DX = 78, DY = 100, MARGEM = 12;
@@ -1110,16 +1227,13 @@ function layout(arv) {
   arv.W = max - min;
   arv.H = NO_A + 2 * MARGEM + P * DY;
 }
-layout(ARV);
-layout(ARV2);
+[ARV, ARV3].forEach(layout);
 
-// mostrar: conjunto opcional de nós visíveis (usado pelo estimador para a árvore ir aparecendo)
-function desenharArvore(svg, arv, { passo = 99, caminho = [], proximo = null, mostrar = null } = {}) {
+function desenharArvore(svg, arv, { passo = 99, caminho = [] } = {}) {
   svg.innerHTML = "";
   svg.setAttribute("viewBox", `0 0 ${arv.W} ${arv.H}`);
   const N = arv.nos;
   const estado = id => {
-    if (mostrar && !mostrar.has(id)) return null;
     if (passo >= N[id].de) return "real";
     return N[id].pendente === passo ? "prov" : null;
   };
@@ -1138,10 +1252,10 @@ function desenharArvore(svg, arv, { passo = 99, caminho = [], proximo = null, mo
     const st = estado(id);
     if (!st) continue;
     const n = N[id], pilula = st === "prov" || n.folha;
-    const cls = id === proximo ? " proximo" : caminho.includes(id) ? " ativo" : "";
-    const g = el("g", { class: "node" + cls }, svg);
+    const g = el("g", { class: "node" + (caminho.includes(id) ? " ativo" : "") }, svg);
     g.classList.add(st === "prov" ? "prov" : n.folha ? "folha" : "questao");
     const L = pilula ? NO_F : NO_Q;
+    // folha laranja/azul: fim de semana/dia útil quando a árvore usa essa variável; senão, acima/abaixo da média geral
     const corFolha = n.w != null ? n.w : +(n.media > media(D));
     el("rect", { x: n.x - L / 2, y: n.y - NO_A / 2, width: L, height: NO_A, rx: pilula ? NO_A / 2 : 10,
                  fill: n.folha && st === "real" ? COR[corFolha] : "#FFFFFF" }, g);
@@ -1156,29 +1270,23 @@ function desenharArvore(svg, arv, { passo = 99, caminho = [], proximo = null, mo
   }
 }
 
-// Percorre a árvore com as respostas dadas; para na primeira pergunta sem resposta
+// Percorre a árvore com as respostas dadas
 function percorrer(arv, resp) {
   const cam = [arv.raiz];
   let id = arv.raiz;
   while (!arv.nos[id].folha) {
-    const n = arv.nos[id], v = resp[n.f];
-    if (v == null) return { cam, proximo: id };
-    id = v > n.lim ? n.sim : n.nao;
+    const n = arv.nos[id];
+    id = resp[n.f] > n.lim ? n.sim : n.nao;
     cam.push(id);
   }
   return { cam, folha: arv.nos[id] };
 }
-const prever = (arv, d) => percorrer(arv, d).folha.media;
-const erro = prev => ({
-  mae: D.reduce((s, d) => s + Math.abs(prev(d) - d.y), 0) / D.length,
-  rmse: Math.sqrt(D.reduce((s, d) => s + (prev(d) - d.y) ** 2, 0) / D.length),
-});
 
 // "Faixa": o consumo de cada dia do grupo numa linha (14 a 39 L), a média e a faixa média ± √MSE
 const FX = y => 8 + (y - 13000) / 26000 * 304;
 function faixa(g) {
   const m = media(g), s = Math.sqrt(mse(g));
-  const pts = g.map((d, i) => `<circle cx="${FX(d.y).toFixed(1)}" cy="${(24 + ((i * 37) % 13 - 6) * 1.5).toFixed(1)}" r="2.6" fill="${COR[d.w]}" opacity=".85" style="stroke: var(--folha-borda); stroke-width: .5"/>`).join("");
+  const pts = g.map((d, i) => `<circle cx="${FX(d.y).toFixed(1)}" cy="${(24 + ((i * 37) % 13 - 6) * 1.5).toFixed(1)}" r="2.6" opacity=".7" style="fill: var(--ponto); stroke: var(--linha); stroke-width: .3"/>`).join("");
   return `<svg class="faixa" viewBox="0 0 320 60" role="img" aria-label="Distribuição do consumo do grupo">
     <rect x="${FX(m - s)}" y="8" width="${FX(m + s) - FX(m - s)}" height="32" rx="6" fill="rgba(242,140,40,.18)"/>
     ${pts}
@@ -1200,56 +1308,70 @@ document.getElementById("r-kpis").innerHTML = [
 ].map(([t, v, s], i) => `<div class="regra${i === 3 ? " destaque" : ""}"><b>${t}</b><div class="kpi">${v}</div><small>${s}</small></div>`).join("");
 const dataBR = s => s.split("-").reverse().join("/");
 document.querySelector("#r-tabela tbody").innerHTML = D.slice(0, 7).map(d =>
-  `<tr><td>${dataBR(d.data)}</td><td>${f1(d.t)} °C</td><td><span class="tag ${d.w ? "p" : "h"}">${d.w ? "Sim" : "Não"}</span></td>
-   <td>${f1(d.c)} mm</td><td><b>${litros(d.y)}</b></td></tr>`).join("");
+  `<tr><td>${dataBR(d.data)}</td><td>${f1(d.t)} °C</td><td><b>${litros(d.y)}</b></td></tr>`).join("");
 
-// ---- Dispersão com os cortes
-const sv = document.getElementById("r-dispersao");
+// ---- Dispersão: eixos, pontos e a escada de uma árvore
 const X0 = 68, Y0 = 12, W = 436, H = 300, TX = [14, 37], TY = [13000, 39000];
 const px = t => X0 + (t - TX[0]) / (TX[1] - TX[0]) * W;
 const py = y => Y0 + H - (y - TY[0]) / (TY[1] - TY[0]) * H;
-[15, 20, 25, 30, 35].forEach(v => {
-  el("line", { x1: X0, x2: X0 + W, y1: py(v * 1000), y2: py(v * 1000), class: "grade" }, sv);
-  el("text", { x: X0 - 8, y: py(v * 1000) + 4, "text-anchor": "end", class: "eixo" }, sv, `${v} mil`);
-  el("text", { x: px(v), y: Y0 + H + 18, "text-anchor": "middle", class: "eixo" }, sv, v);
-});
-el("text", { x: X0 + W / 2, y: Y0 + H + 40, "text-anchor": "middle", "font-weight": 600, "font-size": 14 }, sv, "Temperatura máxima (°C)");
-el("text", { x: 14, y: Y0 + H / 2, "text-anchor": "middle", "font-weight": 600, "font-size": 14,
-             transform: `rotate(-90 14 ${Y0 + H / 2})` }, sv, "Consumo (litros)");
-D.forEach(d => el("circle", { cx: px(d.t), cy: py(d.y), r: 3.6, fill: COR[d.w], opacity: .85,
-                               style: "stroke: var(--linha); stroke-width: .4" }, sv));
+function eixos(svg) {
+  [15, 20, 25, 30, 35].forEach(v => {
+    el("line", { x1: X0, x2: X0 + W, y1: py(v * 1000), y2: py(v * 1000), class: "grade" }, svg);
+    el("text", { x: X0 - 8, y: py(v * 1000) + 4, "text-anchor": "end", class: "eixo" }, svg, `${v} mil`);
+    el("text", { x: px(v), y: Y0 + H + 18, "text-anchor": "middle", class: "eixo" }, svg, v);
+  });
+  el("text", { x: X0 + W / 2, y: Y0 + H + 40, "text-anchor": "middle", "font-weight": 600, "font-size": 14 }, svg, "Temperatura máxima (°C)");
+  el("text", { x: 14, y: Y0 + H / 2, "text-anchor": "middle", "font-weight": 600, "font-size": 14,
+               transform: `rotate(-90 14 ${Y0 + H / 2})` }, svg, "Consumo (litros)");
+}
+// separarTeste: dias de teste aparecem vazados
+function pontos(svg, separarTeste = false) {
+  D.forEach((d, i) => {
+    const vazado = separarTeste && TESTE.has(i);
+    el("circle", { cx: px(d.t), cy: py(d.y), r: 3.6, opacity: vazado ? .9 : .6,
+                   style: vazado ? "fill: none; stroke: var(--linha); stroke-width: 1.2"
+                                 : "fill: var(--ponto); stroke: var(--linha); stroke-width: .3" }, svg);
+  });
+}
+// Faixas de temperatura de cada folha (em ordem) e os cortes, com a árvore cortada em "prof"
+function degraus(arv, prof) {
+  const segs = [], lims = [];
+  const visita = (id, a, b) => {
+    const n = arv.nos[id];
+    if (n.folha || n.nivel >= prof) return segs.push([a, b, n.media]);
+    lims.push(n.lim);
+    visita(n.nao, a, n.lim);
+    visita(n.sim, n.lim, b);
+  };
+  visita(arv.raiz, TX[0], TX[1]);
+  return { segs, lims };
+}
+function escada(g, arv, prof, rotulos = false) {
+  g.innerHTML = "";
+  const { segs, lims } = degraus(arv, prof);
+  lims.forEach(lim => el("line", { x1: px(lim), x2: px(lim), y1: Y0, y2: Y0 + H, "stroke-width": 1.2, "stroke-dasharray": "5 4",
+                                   opacity: lims.length <= 10 ? .8 : .3, style: "stroke: var(--linha)" }, g));
+  const d = segs.map(([a, b, m], i) => (i ? `V${py(m).toFixed(1)}` : `M${px(a).toFixed(1)},${py(m).toFixed(1)}`) + `H${px(b).toFixed(1)}`).join("");
+  // contorno branco só no tema escuro
+  el("path", { d, fill: "none", "stroke-width": 7, "stroke-linejoin": "round", style: "stroke: var(--folha-borda)" }, g);
+  el("path", { d, fill: "none", "stroke-width": 3.5, "stroke-linejoin": "round", stroke: "#F28C28" }, g);
+  if (rotulos) segs.forEach(([a, b, m]) =>
+    el("text", { x: (px(a) + px(b)) / 2, y: py(m) - 10, "text-anchor": "middle", class: "halo" }, g, `≈ ${litros(m)}`));
+}
 
-// linhas de cada passo, derivadas da árvore
-const camadas = [0, 1, 2].map(() => el("g", {}, sv));
-const nivel = (g, y, x1, x2, cor, rotulo, alinhar = "start") => {
-  // contorno branco só no tema escuro, para a linha azul não sumir no fundo preto
-  el("line", { x1: px(x1), x2: px(x2), y1: py(y), y2: py(y), "stroke-width": 7, "stroke-linecap": "round",
-               style: "stroke: var(--folha-borda)" }, g);
-  el("line", { x1: px(x1), x2: px(x2), y1: py(y), y2: py(y), "stroke-width": 4, "stroke-linecap": "round",
-               style: `stroke:${cor}` }, g);
-  el("text", { x: alinhar === "start" ? px(x1) + 6 : px(x2) - 6, y: py(y) - 8, "text-anchor": alinhar, class: "halo" }, g, rotulo);
-};
-const R = ARV.nos[ARV.raiz], lados = [[R.nao, TX[0], R.lim], [R.sim, R.lim, TX[1]]];
-nivel(camadas[0], R.media, TX[0], TX[1], "var(--linha)", `média geral ≈ ${litros(R.media)}`);
-el("line", { x1: px(R.lim), x2: px(R.lim), y1: Y0, y2: Y0 + H, "stroke-width": 2.5, "stroke-dasharray": "8 6", id: "r-corte" }, sv);
-el("text", { x: px(R.lim) + 6, y: Y0 + 14, class: "halo", id: "r-corte-txt" }, sv, `${f2(R.lim)} °C`);
-lados.forEach(([id, a, b], i) => nivel(camadas[1], ARV.nos[id].media, a, b, "var(--linha)", `≈ ${litros(ARV.nos[id].media)}`, i ? "end" : "start"));
-lados.forEach(([id, a, b], i) => {
-  const n = ARV.nos[id];
-  [n.nao, n.sim].forEach(f => nivel(camadas[2], ARV.nos[f].media, a, b, COR[ARV.nos[f].w], `≈ ${litros(ARV.nos[f].media)}`, i ? "end" : "start"));
-});
-
-const N1 = ARV.nos[R.nao], N2 = ARV.nos[R.sim];
+// ---- Intuição: a escada nível a nível
+const sv = document.getElementById("r-dispersao");
+eixos(sv); pontos(sv);
+const camada = el("g", {}, sv);
+const R = ARV.nos[ARV.raiz], N1 = ARV.nos[R.nao], N2 = ARV.nos[R.sim];
 const textoPasso = [
   `Sem nenhuma pergunta, a previsão é uma linha só: a média geral de ${litros(R.media)}. Repare como os pontos se espalham longe dela.`,
   `1º corte — temperatura máxima acima de ${f2(R.lim)} °C? Do lado frio a média cai para ${litros(N1.media)}; do lado quente sobe para ${litros(N2.media)}.`,
-  `2º corte — é fim de semana? Dentro de cada lado, o fim de semana (laranja) consome uns 4 a 5 mil litros a mais que o dia útil (azul). São 4 degraus = 4 folhas.`,
+  `2º nível — a mesma pergunta, agora dentro de cada lado: o frio corta em ${f2(N1.lim)} °C e o quente em ${f2(N2.lim)} °C. São 4 degraus = 4 folhas.`,
 ];
 const sp = document.getElementById("r-arvore-passo");
 function mostrarPasso(n) {
-  camadas.forEach((g, i) => g.style.display = i === n ? "" : "none");
-  document.getElementById("r-corte").style.stroke = n === 0 ? "none" : n === 1 ? "#F28C28" : "var(--linha)";
-  document.getElementById("r-corte-txt").style.display = n === 0 ? "none" : "";
+  escada(camada, ARV, n, true);
   document.querySelectorAll("#r-passos button").forEach(b => b.classList.toggle("on", +b.dataset.p === n));
   document.getElementById("r-legenda-passo").textContent = textoPasso[n];
   desenharArvore(sp, ARV, { passo: n });
@@ -1259,9 +1381,9 @@ document.getElementById("r-passos").addEventListener("click", e => {
 });
 mostrarPasso(0);
 
-// ---- Exemplo passo a passo (MSE da raiz e redução de cada pergunta)
+// ---- Exemplo passo a passo (MSE da raiz e redução do melhor corte)
 const F = (...l) => `<div class="formula">${l.join("<br>")}</div>`;
-const fds = dividir(D, "w", 0.5), tmp = melhor(D, "t"), nCortes = cortes(D, "t").length;
+const CORTES_T = cortes(D, "t"), tmp = maior(CORTES_T), iMelhor = CORTES_T.indexOf(tmp);
 const alto = D.reduce((a, d) => d.y > a.y ? d : a), baixo = D.reduce((a, d) => d.y < a.y ? d : a);
 const ponderado = s => (s.nao.length * mse(s.nao) + s.sim.length * mse(s.sim)) / D.length;
 const PASSOS = [
@@ -1276,28 +1398,24 @@ const PASSOS = [
         ${F(`MSE(raiz) = <span class='res'>${Q(mse(D))}</span>`)}
         <p>A unidade do MSE é <b>litros²</b>, por isso o número é tão grande. A raiz quadrada volta para litros:
         √${Q(mse(D))} ≈ <b>${litros(Math.sqrt(mse(D)))}</b> — o tamanho típico do erro.</p>` },
-  { fase: "Pergunta \"Fim de semana?\"", t: "3. Separamos os dias pela pergunta",
-    c: `<p>Cada dia vai para um ramo. Repare como cada grupo fica <b>menos espalhado</b> que a raiz:</p>
-        <div class="row">${caixa("Não — dia útil", fds.nao)}${caixa("Sim — fim de semana", fds.sim)}</div>` },
-  { fase: "Pergunta \"Fim de semana?\"", t: "4. MSE ponderado e redução",
-    c: `<p>Cada ramo pesa de acordo com quantos dias ele tem.</p>
-        ${F(`MSE(filhos) = (${fds.nao.length}/${D.length}) × ${Q(mse(fds.nao))} + (${fds.sim.length}/${D.length}) × ${Q(mse(fds.sim))} = ${Q(ponderado(fds))}`,
-            `Redução = ${Q(mse(D))} − ${Q(ponderado(fds))} = <span class='res'>${Q(fds.red)}</span>`)}` },
-  { fase: "Pergunta \"Temperatura > limiar?\"", t: "5. Variável numérica: onde cortar?",
+  { fase: "Corte \"Temperatura > limiar?\"", t: "3. Variável numérica: onde cortar?",
     c: `<p>A temperatura não é Sim/Não. A árvore testa <b>todos os limiares possíveis</b> — o ponto médio entre dois valores
-        vizinhos de temperatura. Aqui são <b>${nCortes} candidatos</b>.</p>
-        <p>Para cada candidato ela faz exatamente as contas dos passos 3 e 4 e guarda a redução.
-        (Teste no cartão "Teste você", logo abaixo.)</p>
+        vizinhos de temperatura. Aqui são <b>${CORTES_T.length} candidatos</b>.</p>
+        <p>Para cada candidato ela separa os dias em dois grupos, calcula o MSE de cada um e a redução — as contas dos
+        próximos passos. (Teste no cartão "Teste você", logo abaixo.)</p>
         <p class="nota" style="margin-top:0">O melhor corte é <b>${f2(tmp.lim)} °C</b>.</p>` },
-  { fase: "Pergunta \"Temperatura > limiar?\"", t: `6. Separando em ${f2(tmp.lim)} °C`,
-    c: `<div class="row">${caixa(`Não — até ${f2(tmp.lim)} °C`, tmp.nao)}${caixa(`Sim — acima de ${f2(tmp.lim)} °C`, tmp.sim)}</div>` },
-  { fase: "Pergunta \"Temperatura > limiar?\"", t: "7. MSE ponderado e redução",
-    c: F(`MSE(filhos) = (${tmp.nao.length}/${D.length}) × ${Q(mse(tmp.nao))} + (${tmp.sim.length}/${D.length}) × ${Q(mse(tmp.sim))} = ${Q(ponderado(tmp))}`,
-         `Redução = ${Q(mse(D))} − ${Q(ponderado(tmp))} = <span class='res'>${Q(tmp.red)}</span>`) },
-  { fase: "Decisão", t: "8. Qual pergunta vira a raiz?",
-    c: `${F(`Temperatura > ${f2(tmp.lim)} °C: redução ${Q(tmp.red)}`, `Fim de semana: redução ${Q(fds.red)}`)}
-        <p class="nota" style="margin-top:0">Maior redução → <b>a temperatura vira a raiz</b>. Depois, a árvore repete tudo dentro de
-        cada lado — e lá o fim de semana vence.</p>` },
+  { fase: "Corte \"Temperatura > limiar?\"", t: `4. Separando em ${f2(tmp.lim)} °C`,
+    c: `<p>Cada dia vai para um ramo. Repare como cada grupo fica <b>menos espalhado</b> que a raiz:</p>
+        <div class="row">${caixa(`Não — até ${f2(tmp.lim)} °C`, tmp.nao)}${caixa(`Sim — acima de ${f2(tmp.lim)} °C`, tmp.sim)}</div>` },
+  { fase: "Corte \"Temperatura > limiar?\"", t: "5. MSE ponderado e redução",
+    c: `<p>Cada ramo pesa de acordo com quantos dias ele tem.</p>
+        ${F(`MSE(filhos) = (${tmp.nao.length}/${D.length}) × ${Q(mse(tmp.nao))} + (${tmp.sim.length}/${D.length}) × ${Q(mse(tmp.sim))} = ${Q(ponderado(tmp))}`,
+            `Redução = ${Q(mse(D))} − ${Q(ponderado(tmp))} = <span class='res'>${Q(tmp.red)}</span>`)}
+        <p>Nenhum outro limiar reduz tanto: por isso a raiz é <b>${pergunta("t", tmp.lim)}</b></p>` },
+  { fase: "E depois?", t: "6. A mesma conta, dentro de cada lado",
+    c: `<p>Com uma variável só, "escolher a pergunta" vira simplesmente <b>"escolher onde cortar"</b>.</p>
+        <p>No próximo nível a árvore repete os passos 3 a 5 só com os ${tmp.nao.length} dias frios e, separadamente, só com os
+        ${tmp.sim.length} dias quentes. Veja as duas curvas em "Nível 2", logo abaixo.</p>` },
 ];
 let passoAtual = 0;
 const trilha = document.getElementById("r-trilha");
@@ -1317,33 +1435,38 @@ document.getElementById("r-passo-reset").onclick = () => mostrarCalculo(0);
 trilha.onclick = e => { if (e.target.dataset.i != null) mostrarCalculo(+e.target.dataset.i); };
 mostrarCalculo(0);
 
-// ---- Teste você: curva de redução por limiar
-const CORTES_T = cortes(D, "t"), iMelhor = CORTES_T.indexOf(tmp);
-const cv = document.getElementById("r-curva");
-const CX0 = 68, CY0 = 10, CW = 436, CH = 160, maxRed = tmp.red * 1.15;
+// ---- Curva de redução do MSE por limiar (raiz e cada lado do 2º nível)
+const CX0 = 68, CY0 = 10, CW = 436, CH = 160;
 const cx = t => CX0 + (t - TX[0]) / (TX[1] - TX[0]) * CW;
-const cy = r => CY0 + CH - Math.max(0, r) / maxRed * CH;
-[0, 2, 4, 6].forEach(v => {
-  el("line", { x1: CX0, x2: CX0 + CW, y1: cy(v * 1e6), y2: cy(v * 1e6), class: "grade" }, cv);
-  el("text", { x: CX0 - 8, y: cy(v * 1e6) + 4, "text-anchor": "end", class: "eixo" }, cv, v ? `${v} mi` : "0");
-});
-[15, 20, 25, 30, 35].forEach(v => el("text", { x: cx(v), y: CY0 + CH + 18, "text-anchor": "middle", class: "eixo" }, cv, `${v} °C`));
-el("text", { x: 12, y: CY0 + CH / 2, "text-anchor": "middle", "font-size": 12, "font-weight": 600,
-             transform: `rotate(-90 12 ${CY0 + CH / 2})` }, cv, "Redução (L²)");
-el("path", { d: CORTES_T.map((s, i) => `${i ? "L" : "M"}${cx(s.lim).toFixed(1)},${cy(s.red).toFixed(1)}`).join(""),
-             fill: "none", "stroke-width": 2.5, style: "stroke: var(--linha)" }, cv);
-el("line", { x1: cx(tmp.lim), x2: cx(tmp.lim), y1: CY0, y2: CY0 + CH, "stroke-width": 2, "stroke-dasharray": "6 5", stroke: "#F28C28" }, cv);
-el("circle", { cx: cx(tmp.lim), cy: cy(tmp.red), r: 6, fill: "#F28C28", style: "stroke: var(--linha)" }, cv);
-el("text", { x: cx(tmp.lim) + 10, y: cy(tmp.red) + 4, class: "halo" }, cv, `melhor: ${f2(tmp.lim)} °C`);
-const marca = el("line", { y1: CY0, y2: CY0 + CH, "stroke-width": 2, style: "stroke: var(--linha)" }, cv);
-const ponto = el("circle", { r: 6, fill: "#0B2545", style: "stroke: var(--linha); stroke-width: 2" }, cv);
+function curva(svg, lista) {
+  const b = maior(lista), topo = b.red * 1.15, passo = topo > 4e6 ? 2e6 : 5e5;
+  const cy = r => CY0 + CH - Math.max(0, r) / topo * CH;
+  for (let v = 0; v <= topo; v += passo) {
+    el("line", { x1: CX0, x2: CX0 + CW, y1: cy(v), y2: cy(v), class: "grade" }, svg);
+    el("text", { x: CX0 - 8, y: cy(v) + 4, "text-anchor": "end", class: "eixo" }, svg, v ? `${(v / 1e6).toLocaleString("pt-BR")} mi` : "0");
+  }
+  [15, 20, 25, 30, 35].forEach(v => el("text", { x: cx(v), y: CY0 + CH + 18, "text-anchor": "middle", class: "eixo" }, svg, `${v} °C`));
+  el("text", { x: 12, y: CY0 + CH / 2, "text-anchor": "middle", "font-size": 12, "font-weight": 600,
+               transform: `rotate(-90 12 ${CY0 + CH / 2})` }, svg, "Redução (L²)");
+  el("path", { d: lista.map((s, i) => `${i ? "L" : "M"}${cx(s.lim).toFixed(1)},${cy(s.red).toFixed(1)}`).join(""),
+               fill: "none", "stroke-width": 2.5, style: "stroke: var(--linha)" }, svg);
+  el("line", { x1: cx(b.lim), x2: cx(b.lim), y1: CY0, y2: CY0 + CH, "stroke-width": 2, "stroke-dasharray": "6 5", stroke: "#F28C28" }, svg);
+  el("circle", { cx: cx(b.lim), cy: cy(b.red), r: 6, fill: "#F28C28", style: "stroke: var(--linha)" }, svg);
+  el("text", { x: cx(b.lim) + 10, y: cy(b.red) + 4, class: "halo" }, svg, `melhor: ${f2(b.lim)} °C`);
+  return cy;
+}
 
-const sl = document.getElementById("r-limiar");
-Object.assign(sl, { min: 0, max: CORTES_T.length - 1, step: 1, value: Math.round(CORTES_T.length * 0.15) });
+// Teste você: arrastando o limiar na curva da raiz
+const cv = document.getElementById("r-curva");
+const cyRaiz = curva(cv, CORTES_T);
+const marca = el("line", { y1: CY0, y2: CY0 + CH, "stroke-width": 2, style: "stroke: var(--linha)" }, cv);
+const ponto = el("circle", { r: 6, style: "fill: var(--ponto); stroke: var(--linha); stroke-width: 2" }, cv);
+const sl = document.getElementById("r-limiar"), INICIO = Math.round(CORTES_T.length * 0.15);
+Object.assign(sl, { min: 0, max: CORTES_T.length - 1, step: 1, value: INICIO });
 function atualizarLimiar() {
   const s = CORTES_T[+sl.value];
   marca.setAttribute("x1", cx(s.lim)); marca.setAttribute("x2", cx(s.lim));
-  ponto.setAttribute("cx", cx(s.lim)); ponto.setAttribute("cy", cy(s.red));
+  ponto.setAttribute("cx", cx(s.lim)); ponto.setAttribute("cy", cyRaiz(s.red));
   document.getElementById("r-limiar-out").textContent = `${f2(s.lim)} °C`;
   document.getElementById("r-limiar-lados").innerHTML =
     caixa(`Até ${f2(s.lim)} °C`, s.nao) + caixa(`Acima de ${f2(s.lim)} °C`, s.sim) +
@@ -1352,99 +1475,117 @@ function atualizarLimiar() {
 }
 sl.oninput = atualizarLimiar;
 document.getElementById("r-ir-melhor").onclick = () => { sl.value = iMelhor; atualizarLimiar(); };
+document.getElementById("r-limiar-reset").onclick = () => { sl.value = INICIO; atualizarLimiar(); };
 atualizarLimiar();
 
-// ---- Tabelas de redução por nível
-function cartaoNivel(titulo, grupo, feats, nota) {
-  const linhas = feats.map(f => melhor(grupo, f)).filter(Boolean).sort((a, b) => b.red - a.red);
-  return `<div class="card">
-    <h3>${titulo}</h3>
-    <p style="margin:0 0 12px">${resumo(grupo)}</p>
-    <div class="wrap"><table>
-      <thead><tr><th>Variável</th><th>Melhor corte</th><th>Ramo Não</th><th>Ramo Sim</th><th>Redução</th></tr></thead>
-      <tbody>${linhas.map((l, i) => `<tr class="${i === 0 ? "best" : ""}">
-        <td>${NOME_F[l.f]}</td><td>${corte(l.f, l.lim)}</td>
-        <td>${l.nao.length} dias<small>média ${litros(media(l.nao))}</small></td>
-        <td>${l.sim.length} dias<small>média ${litros(media(l.sim))}</small></td>
-        <td>${Q(l.red)}</td></tr>`).join("")}</tbody>
-    </table></div>
-    ${nota ? `<p class="nota">${nota}</p>` : ""}
-  </div>`;
-}
-const frio = N1.g, quente = N2.g;
-document.getElementById("r-niveis").innerHTML = [
-  cartaoNivel("Nível 1 — raiz (1º corte)", D, ["t", "w"],
-    "A <b>temperatura</b> vence. Repare que o fim de semana também reduz bastante o erro — ele vai aparecer no próximo nível."),
-  cartaoNivel(`Nível 2 — lado frio (até ${f2(R.lim)} °C)`, frio, ["t", "w"]),
-  cartaoNivel(`Nível 2 — lado quente (acima de ${f2(R.lim)} °C)`, quente, ["t", "w"],
-    "Nos dois lados, <b>fim de semana</b> vence. A árvore para aqui (profundidade 2): são 4 folhas, cada uma prevendo a média do seu grupo."),
-].join("");
-
-// ---- Chuva
-const ch = melhor(D, "c");
-document.getElementById("r-chuva-efeito").innerHTML = `
-  <h3>A chuva tem efeito? Melhor corte: ${f1(ch.lim)} mm</h3>
-  <div class="row">${caixa(`Até ${f1(ch.lim)} mm`, ch.nao)}${caixa(`Acima de ${f1(ch.lim)} mm`, ch.sim)}</div>
-  <p style="margin:12px 0 0">Sim: dias com chuva consomem em média <b>${litros(media(ch.nao) - media(ch.sim))} a menos</b>.
-    A redução do MSE é <b>${Q(ch.red)}</b> — positiva, mas bem menor que a da temperatura (${Q(tmp.red)}).</p>`;
-document.getElementById("r-barras").innerHTML = [["Raiz", D], ["Lado frio", frio], ["Lado quente", quente]].map(([t, g]) => {
-  const ls = ["t", "w", "c"].map(f => melhor(g, f)).sort((a, b) => b.red - a.red);
-  return `<div><h3 style="font-size:.95rem">${t}</h3><div class="barras">${ls.map((l, i) =>
-    `<span>${NOME_F[l.f]}</span><div class="barra${i === 0 ? " best" : ""}" style="width:${(l.red / tmp.red * 100).toFixed(1)}%"></div><b>${Q(l.red)}</b>`).join("")}</div></div>`;
-}).join("");
-desenharArvore(document.getElementById("r-arvore-v2"), ARV2);
-document.querySelector("#r-erros tbody").innerHTML = [
-  ["Só a média", erroMedia], ["Árvore", erro(d => prever(ARV, d))], ["Árvore com chuva", erro(d => prever(ARV2, d))],
-].map(([t, e], i) => `<tr class="${i ? "" : ""}"><td>${t}</td><td>${litros(e.mae)}</td><td>${litros(e.rmse)}</td></tr>`).join("");
-
-// ---- Estimador (começa em branco e a árvore vai aparecendo)
-const sf = document.getElementById("r-arvore-final");
-const PERGUNTAS = ["t", "w"];
-const resp = {};
-const tIn = document.getElementById("r-temp-in"), tOut = document.getElementById("r-temp-out");
-const maeArvore = erro(d => prever(ARV, d)).mae;
-function atualizar() {
-  tOut.textContent = `${f1(+tIn.value)} °C`;
-  const r = percorrer(ARV, resp);
-  const atual = r.proximo ? ARV.nos[r.proximo].f : null;
-  document.querySelectorAll("#r-perguntas .pergunta").forEach(p => {
-    const f = p.dataset.f, respondida = resp[f] != null;
-    p.classList.toggle("atual", f === atual);
-    p.classList.toggle("inativa", !respondida && f !== atual);
-    p.querySelectorAll(".btns button").forEach(b => {
-      b.classList.toggle("on", resp[f] === +b.dataset.v);
-      b.disabled = !respondida && f !== atual;
-    });
-  });
-  document.getElementById("r-temp-ok").style.display = resp.t == null ? "" : "none";
-  // mostra o caminho percorrido e os dois ramos de cada pergunta já respondida
-  const mostrar = new Set(r.cam);
-  r.cam.forEach(id => {
-    const n = ARV.nos[id];
-    if (!n.folha && id !== r.proximo) { mostrar.add(n.sim); mostrar.add(n.nao); }
-  });
-  desenharArvore(sf, ARV, { caminho: r.cam, proximo: r.proximo || null, mostrar });
-  document.getElementById("r-resultado").innerHTML = r.folha
-    ? `Consumo estimado: <span class="res">≈ ${litros(r.folha.media)}</span>
-       <small>Média de ${r.folha.n} dias parecidos em 2015 · a árvore erra em média ± ${litros(maeArvore)}</small>`
-    : `<small>A árvore está perguntando: <b>${ARV.nos[r.proximo].txt}</b></small>`;
-}
-document.getElementById("r-temp-ok").onclick = () => { resp.t = +tIn.value; atualizar(); };
-// depois de respondida, a temperatura atualiza a árvore ao vivo
-tIn.oninput = () => { if (resp.t != null) resp.t = +tIn.value; atualizar(); };
-document.getElementById("r-perguntas").addEventListener("click", e => {
-  const box = e.target.closest(".btns");
-  if (!box || e.target.dataset.v == null || e.target.disabled) return;
-  resp[box.dataset.f] = +e.target.dataset.v;
-  atualizar();
+// Nível 2: a mesma curva em cada lado
+[["frio", N1, `Lado frio (até ${f2(R.lim)} °C)`], ["quente", N2, `Lado quente (acima de ${f2(R.lim)} °C)`]].forEach(([k, n, titulo]) => {
+  curva(document.getElementById(`r-curva-${k}`), cortes(n.g, "t"));
+  document.getElementById(`r-${k}-titulo`).textContent = titulo;
+  document.getElementById(`r-${k}-txt`).innerHTML = `${resumo(n.g)} · melhor corte <b>${f2(n.lim)} °C</b>`;
 });
-document.getElementById("r-reset").onclick = () => {
-  PERGUNTAS.forEach(f => delete resp[f]);
-  tIn.value = 26;
-  atualizar();
-};
-atualizar();
+document.getElementById("r-niveis-nota").innerHTML = `Os cortes de <b>${f2(N1.lim)} °C</b> e <b>${f2(N2.lim)} °C</b> são exatamente
+  os do 2º nível da parte 3. A árvore poderia continuar repetindo essa conta em cada pedaço — <b>até quando?</b>`;
 
+// ---- Profundidade: escada cortada em cada nível, erro no treino × teste
+const PROF_MAX = profundidade(CHEIA_TR);
+const CURVA = Array.from({ length: PROF_MAX }, (_, i) => {
+  const p = i + 1, folhas = folhasAte(CHEIA_TR, p);
+  return { p, folhas: folhas.length, unicas: folhas.filter(n => n.n === 1).length,
+           treino: rmse(CHEIA_TR, TREINO, p), teste: rmse(CHEIA_TR, TESTE_D, p) };
+});
+const IDEAL = CURVA.reduce((a, c) => c.teste < a.teste ? c : a);
+const nomeProf = p => p === PROF_MAX ? `${p} (sem limite)` : `${p}`;
+
+const svP = document.getElementById("r-prof-disp");
+eixos(svP); pontos(svP, true);
+const camP = el("g", {}, svP);
+
+const tt = document.getElementById("r-treino-teste");
+// viewBox largo (960) para as fontes ficarem no tamanho do texto da página; a legenda fica fora do gráfico
+const GX0 = 78, GY0 = 16, GW = 860, GH = 218, GY = [2000, 5000];
+const gx = p => GX0 + (p - 1) / (PROF_MAX - 1) * GW;
+const gy = v => GY0 + GH - (v - GY[0]) / (GY[1] - GY[0]) * GH;
+[2, 3, 4, 5].forEach(v => {
+  el("line", { x1: GX0, x2: GX0 + GW, y1: gy(v * 1000), y2: gy(v * 1000), class: "grade" }, tt);
+  el("text", { x: GX0 - 10, y: gy(v * 1000) + 4, "text-anchor": "end", class: "eixo" }, tt, `${v} mil L`);
+});
+CURVA.forEach(c => el("text", { x: gx(c.p), y: GY0 + GH + 20, "text-anchor": "middle", class: "eixo" }, tt, c.p));
+el("text", { x: GX0 + GW / 2, y: GY0 + GH + 44, "text-anchor": "middle", "font-weight": 600, "font-size": 13 }, tt, "max_depth");
+el("text", { x: 14, y: GY0 + GH / 2, "text-anchor": "middle", "font-weight": 600, "font-size": 13,
+             transform: `rotate(-90 14 ${GY0 + GH / 2})` }, tt, "Erro (RMSE)");
+const marcaP = el("line", { y1: GY0, y2: GY0 + GH, "stroke-width": 2, "stroke-dasharray": "4 4", opacity: .5, style: "stroke: var(--linha)" }, tt);
+[["treino", "var(--ponto)", null], ["teste", "var(--linha)", "8 5"]].forEach(([k, cor, traco]) => {
+  el("path", { d: CURVA.map((c, j) => `${j ? "L" : "M"}${gx(c.p).toFixed(1)},${gy(c[k]).toFixed(1)}`).join(""), fill: "none",
+               "stroke-width": 2, ...(traco ? { "stroke-dasharray": traco } : {}), style: `stroke: ${cor}` }, tt);
+  CURVA.forEach(c => el("circle", { cx: gx(c.p), cy: gy(c[k]), r: 3.5, style: `fill: ${cor}` }, tt));
+});
+el("circle", { cx: gx(IDEAL.p), cy: gy(IDEAL.teste), r: 8, fill: "#F28C28", style: "stroke: var(--linha); stroke-width: 1.5" }, tt);
+// rótulo abaixo do ponto: entre a curva de teste e a de treino não há traço
+el("text", { x: gx(IDEAL.p), y: gy(IDEAL.teste) + 26, "text-anchor": "middle", class: "halo", "font-size": 13 }, tt, `melhor: ${IDEAL.p} níveis`);
+
+const profIn = document.getElementById("r-prof-in");
+Object.assign(profIn, { min: 1, max: PROF_MAX, step: 1, value: 1 });
+function atualizarProf() {
+  const c = CURVA[+profIn.value - 1];
+  escada(camP, CHEIA_TR, c.p);
+  marcaP.setAttribute("x1", gx(c.p)); marcaP.setAttribute("x2", gx(c.p));
+  document.getElementById("r-prof-out").textContent = `max_depth = ${nomeProf(c.p)}`;
+  document.getElementById("r-prof-titulo").textContent = `Árvore com ${c.p} ${c.p === 1 ? "nível" : "níveis"} · ${c.folhas} folhas`;
+  document.getElementById("r-prof-texto").innerHTML =
+    c.p <= IDEAL.p ? "A escada <b>sobe com a temperatura</b>, como esperado. Cada degrau ainda tem muitos dias."
+    : c.p <= IDEAL.p + 2 ? "Começam a aparecer degraus que <b>sobem e descem sem motivo</b>: a árvore está aprendendo detalhes de 2015."
+    : `A linha <b>persegue cada ponto cheio</b> e erra os vazados: a árvore decorou o treino. ${c.unicas} das ${c.folhas} folhas têm um dia só.`;
+  document.getElementById("r-prof-kpis").innerHTML = [
+    ["Folhas", `${c.folhas}`, `${c.unicas} com um dia só`, false],
+    ["Erro no treino", `± ${Q(c.treino)} <small>L</small>`, "dias que a árvore viu", false],
+    ["Erro no teste", `± ${Q(c.teste)} <small>L</small>`, c === IDEAL ? "o menor de todos!" : `o menor é ${litros(IDEAL.teste)}`, c === IDEAL],
+  ].map(([t, v, s, d]) => `<div class="regra${d ? " destaque" : ""}"><b>${t}</b><div class="kpi">${v}</div><small>${s}</small></div>`).join("");
+}
+profIn.oninput = atualizarProf;
+atualizarProf();
+const ULTIMA = CURVA[PROF_MAX - 1];
+document.getElementById("r-prof-nota").innerHTML = `O erro no <b>treino só cai</b> (até ${litros(ULTIMA.treino)}). O erro no
+  <b>teste cai até ${IDEAL.p} níveis</b> (${litros(IDEAL.teste)}) e depois sobe até ${litros(ULTIMA.teste)}: esse é o
+  <b>overfitting</b>. A partir daí cada corte novo aprende o ruído de 2015, não a relação entre temperatura e consumo.`;
+
+// Dias de 28 °C: mesma temperatura, consumos diferentes
+const DIAS28 = D.filter(d => d.t === 28);
+document.getElementById("r-dias28-txt").innerHTML = `Mesmo sem limite sobra erro no treino. São ${D.length} dias e só
+  <b>${new Set(D.map(d => d.t)).size} temperaturas diferentes</b>: dias com a mesma temperatura caem na mesma folha e
+  recebem a mesma previsão. Veja os ${DIAS28.length} dias de 28 °C:`;
+document.querySelector("#r-dias28 tbody").innerHTML = DIAS28.map(d =>
+  `<tr><td>${dataBR(d.data)}</td><td>${f1(d.t)} °C</td><td><span class="tag ${d.w ? "p" : "h"}">${d.w ? "Sim" : "Não"}</span></td>
+   <td><b>${litros(d.y)}</b></td></tr>`).join("");
+
+// min_samples_leaf: árvore sem limite de profundidade, mas com um mínimo de dias por folha
+const MINIMOS = [1, 5, 10, 20, 30].map(m => {
+  const arv = construir(TREINO, ["t"], Infinity, m);
+  return { m, folhas: folhasAte(arv).length, treino: rmse(arv, TREINO), teste: rmse(arv, TESTE_D) };
+});
+const melhorMin = MINIMOS.reduce((a, c) => c.teste < a.teste ? c : a);
+document.querySelector("#r-minfolha tbody").innerHTML = MINIMOS.map(c =>
+  `<tr class="${c === melhorMin ? "best" : ""}"><td>${c.m}</td><td>${c.folhas}</td><td>${litros(c.treino)}</td><td>${litros(c.teste)}</td></tr>`).join("");
+document.getElementById("r-minfolha-nota").innerHTML = `Com pelo menos <b>${melhorMin.m} dias por folha</b> o erro de teste
+  (${litros(melhorMin.teste)}) fica ${melhorMin.teste < IDEAL.teste ? "até menor que" : "perto"} do de <code>max_depth=${IDEAL.p}</code>
+  (${litros(IDEAL.teste)}): a árvore corta mais fundo onde há muitos dias e para onde há poucos.`;
+
+// ---- Estimador: árvore de 3 níveis, caminho aceso conforme a temperatura
+const sf = document.getElementById("r-arvore-final");
+const tIn = document.getElementById("r-temp-in"), tOut = document.getElementById("r-temp-out");
+function atualizar() {
+  const t = Math.fround(+tIn.value), r = percorrer(ARV3, { t });
+  tOut.textContent = `${f1(t)} °C`;
+  desenharArvore(sf, ARV3, { caminho: r.cam });
+  document.getElementById("r-caminho").innerHTML = r.cam.slice(0, -1).map(id => {
+    const n = ARV3.nos[id];
+    return `${n.txt} <b>${t > n.lim ? "Sim" : "Não"}</b>`;
+  }).join(" → ");
+  document.getElementById("r-resultado").innerHTML = `Consumo estimado: <span class="res">≈ ${litros(r.folha.media)}</span>
+    <small>Média de ${r.folha.n} dias de 2015 nessa faixa de temperatura</small>`;
+}
+tIn.oninput = atualizar;
+atualizar();
 
 })();
 </script>
@@ -1460,7 +1601,7 @@ addEventListener("scroll", () => {
   if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4)
     links.forEach((a, i) => a.classList.toggle("on", i === links.length - 1));
 });
-// com 12 links a barra rola na horizontal: mantém o link ativo à vista
+// com 14 links a barra rola na horizontal: mantém o link ativo à vista
 const barra = document.querySelector("nav .in");
 new MutationObserver(() => {
   const ativo = barra.querySelector("a.on");
@@ -1468,60 +1609,34 @@ new MutationObserver(() => {
 }).observe(barra, { subtree: true, attributeFilter: ["class"] });
 </script>
 <script>
-// ---- Apresentação: progresso, navegação entre seções (botões e setas) e entrada suave
+// ===== Só interface: progresso de leitura, voltar ao topo e atalhos ← → nos passo a passo
 (() => {
-  const paradas = [...document.querySelectorAll("main .parte, main section[id]")];
-  const rot = document.getElementById("sec-rot");
-  const ant = document.getElementById("sec-ant"), prox = document.getElementById("sec-prox");
-  const prog = document.querySelector(".progresso i");
-  const reduz = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const nomeDe = el => {
-    if (el.classList.contains("parte")) return el.querySelector("h2").textContent.trim();
-    const a = document.querySelector(`nav a[href="#${el.id}"]`);
-    return (el.closest(".parte-reg") ? "Regressão · " : "Classificação · ") + (a ? a.textContent.trim() : el.id);
+  const barra = document.querySelector(".progresso i"), topo = document.querySelector(".topo");
+  const rolar = () => {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    if (barra) barra.style.transform = `scaleX(${max > 0 ? Math.min(1, scrollY / max) : 0})`;
+    if (topo) topo.classList.toggle("visivel", scrollY > innerHeight * 1.2);
   };
-  const atual = () => {
-    if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) return paradas.length - 1;
-    const lim = innerHeight * 0.35; let i = -1;
-    paradas.forEach((p, k) => { if (p.getBoundingClientRect().top <= lim) i = k; });
-    return i;
-  };
-  let pend = false;
-  function atualizar() {
-    pend = false;
-    const h = document.documentElement.scrollHeight - innerHeight;
-    prog.style.transform = `scaleX(${h > 0 ? Math.min(1, scrollY / h) : 0})`;
-    const i = atual();
-    rot.innerHTML = i < 0 ? "Capa"
-      : `<b>${String(i + 1).padStart(2, "0")}</b> / ${paradas.length}<span class="nome"> · ${nomeDe(paradas[i])}</span>`;
-    ant.disabled = i < 0;
-    prox.disabled = i >= paradas.length - 1;
-  }
-  const agendar = () => { if (!pend) { pend = true; requestAnimationFrame(atualizar); } };
-  addEventListener("scroll", agendar, { passive: true });
-  addEventListener("resize", agendar);
-  const ir = d => {
-    const alvo = atual() + d, behavior = reduz ? "auto" : "smooth";
-    if (alvo < 0) scrollTo({ top: 0, behavior });
-    else if (alvo < paradas.length) paradas[alvo].scrollIntoView({ behavior, block: "start" });
-  };
-  ant.onclick = () => ir(-1);
-  prox.onclick = () => ir(1);
-  addEventListener("keydown", e => {
-    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-    if (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]")) return;
-    if (e.key === "ArrowRight") { e.preventDefault(); ir(1); }
-    else if (e.key === "ArrowLeft") { e.preventDefault(); ir(-1); }
-  });
-  atualizar();
+  addEventListener("scroll", rolar, { passive: true });
+  addEventListener("resize", rolar);
+  rolar();
 
-  if (!reduz && "IntersectionObserver" in window) {
-    document.documentElement.classList.add("anima");
-    const io = new IntersectionObserver(es => es.forEach(e => {
-      if (e.isIntersecting) { e.target.classList.add("visivel"); io.unobserve(e.target); }
-    }), { rootMargin: "0px 0px -8% 0px", threshold: 0.01 });
-    paradas.forEach(p => io.observe(p));
-  }
+  // ← → avançam o passo a passo que estiver mais visível na tela (ou que tiver o foco)
+  const cartoes = [...document.querySelectorAll(".passo-card")];
+  addEventListener("keydown", e => {
+    if (e.altKey || e.ctrlKey || e.metaKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+    const alvo = e.target;
+    if (alvo.closest && alvo.closest("input, textarea, select, [contenteditable]")) return;
+    let cartao = alvo.closest && alvo.closest(".passo-card");
+    if (!cartao) {
+      const visivel = c => { const r = c.getBoundingClientRect(); return Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0)); };
+      cartao = cartoes.reduce((a, c) => visivel(c) > (a ? visivel(a) : 0) ? c : a, null);
+      if (!cartao || visivel(cartao) < 160) return;
+    }
+    const botoes = cartao.querySelectorAll(".passo-nav button");
+    const b = e.key === "ArrowLeft" ? botoes[0] : botoes[1];
+    if (b && !b.disabled) { e.preventDefault(); b.click(); }
+  });
 })();
 </script>
 </body>
